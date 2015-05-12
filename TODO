@@ -1,0 +1,37 @@
+* Convertir les valeurs selon l'unité :
+	1000 µs -> 1 ms
+	32 bits -> 4 bytes
+	8192 bits -> 1 Kb
+	25,4 mm -> 2,54 cm -> 1 inch 
+	10 mm -> 1 cm
+	-> FAIT, sauf le support metrique -> inch & co
+
+* Supprimer les ".00" des valeurs décimales lorques le Quant (si y'en a un) et entier lui aussi...
+
+* CurveControl, supportant int min, int max, nb values, un label, plusieurs modes de courbe (gamma, segments, splines/bezies + reset)
+
+* SpinControl 
+	Support de format de saisie décimaux en plus d'entiers.
+         Corriger le bug de placement du label
+
+* Grouper toutes les options dans une seule et même boite si elles étaients toutes seules dans 
+  chaque groupe... -> niash driver, par exemple
+
+* Ajouter des icones au fichier resource
+	-> FAIT, facile à en ajouter...
+
+* Ajouter une CollapsableBox avec des infos sur le driver en fin de liste...
+	-> FAIT
+
+* Implementer le Preview + scan area(s) selection
+	Zoom dans l'image preview, si possible.
+
+* Corriger le bug sur les SANE_Fixed négatif et le slider (qui les interprete comme des integers unsigned!!!)
+
+* Revoir le visuel globalement :
+  - menu de preset MenuField tout ch'tit
+  - sauvegarde des valeurs de options (y compris l'état des CollapsableBoxes)
+  - Bouton prescan, barre de progression a intégrer *ailleurs*
+
+
+
