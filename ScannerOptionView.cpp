@@ -870,7 +870,7 @@ void ScannerOptionView::InitIcon()
 	char app_path[B_PATH_NAME_LENGTH+1];
 	BBitmap* icon = NULL;
 
-	if (GetBinaryPath(app_path, GetBinaryPath) < B_OK)
+	if (GetBinaryPath(app_path, (void*)GetBinaryPath) < B_OK)
 		return;
 
 	BFile file(app_path, B_READ_ONLY);
