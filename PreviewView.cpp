@@ -36,7 +36,7 @@ void PreviewView::FrameResized(float width, float height)
 
 BRect PreviewView::CenterImage()
 {
-	BRect rect(m_geometry);  // m_bitmap->Bounds());
+	BRect rect(m_geometry);
 	float width, height;
 	width = Bounds().Width();
 	height = Bounds().Height();
@@ -58,7 +58,7 @@ BRect PreviewView::CenterImage()
 		rect.OffsetBy((int) ((width - rect.Width()) / 2), 0);
 	}
 
-	return rect;  // Bounds().InsetByCopy(2, 2);
+	return rect;
 }
 
 void PreviewView::Draw(BRect invalid)
@@ -86,40 +86,14 @@ void PreviewView::Draw(BRect invalid)
 	StrokeRect(r);
 	r.InsetBy(1, 1);
 
-	if (m_image)
+	if (m_image) {
+		SetHighColor(255, 255, 255, 255);
+		FillRect(r);
 		DrawBitmap(m_image, m_image->Bounds(), r, B_FILTER_BITMAP_BILINEAR);
-	else {
+	} else {
 		SetHighColor(255, 255, 255, 255);
 		FillRect(r);
 	}
-	
-
-#if 0	
-	if ( Window()->Lock() )
-		{
-		if ( m_image )
-			{
-			switch ( m_image->ColorSpace() )
-				{
-				case B_RGBA32:
-				case B_RGBA32_BIG:
-				case B_RGBA15:
-				case B_RGBA15_BIG:
-					SetDrawingMode(B_OP_ALPHA);
-					SetBlendingMode(B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
-					break;
-					
-				default:
-					SetDrawingMode(B_OP_COPY);
-					break;
-				};
-			
-			DrawBitmap(m_image, invalid, invalid);
-			};
-
-		Window()->Unlock();
-		};
-#endif	
 }
 
 
