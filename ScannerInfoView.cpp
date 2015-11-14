@@ -1,17 +1,19 @@
-
-#include <app/Application.h>
-#include <app/Roster.h>		// for app_info
+#include <Application.h>
+#include <Roster.h>		// for app_info
 #include <InterfaceKit.h>
 #include <StorageKit.h>
 #include <SupportKit.h>
 #include <TranslationKit.h>
+#include <Catalog.h>
 
 #include <stdlib.h>
+#include <sane/sane.h>
 
 #include "Sanity.h"
-#include "SanityStrings.h"
-#include "BeSANE.h"
 #include "ScannerInfoView.h"
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "ScannerInfoView"
 
 // Constructor & destructor
 // ------------------------
@@ -33,13 +35,13 @@ ScannerInfoView::ScannerInfoView(BRect frame, uint32 resizeMask, uint32 flags,
 	text = "";
 	if (device_info) {
 		if (device_info->name)
-			text << _T("Name: ") << device_info->name << "\n";
+			text << B_TRANSLATE("Name: ") << device_info->name << "\n";
 		if (device_info->vendor && strcmp("Noname", device_info->vendor) != 0)
-			text << _T("Vendor: ") << device_info->vendor << "\n";
+			text << B_TRANSLATE("Vendor: ") << device_info->vendor << "\n";
 		if (device_info->model)
-			text << _T("Model: ") << device_info->model << "\n";
+			text << B_TRANSLATE("Model: ") << device_info->model << "\n";
 		if (device_info->type)
-			text << _T("Type: ") << device_info->type << "\n";
+			text << B_TRANSLATE("Type: ") << device_info->type << "\n";
 	}
 
 	BTextView *tv = new BTextView(r, "scanner_info_textview",  r, B_FOLLOW_LEFT | B_FOLLOW_TOP, B_WILL_DRAW);

@@ -4,8 +4,6 @@
 #include <InterfaceKit.h>
 #include <SupportKit.h>
 
-#include "BeSANE.h"
-
 class ScannerOptionView : public BView  
 {
 public:

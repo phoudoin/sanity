@@ -1,5 +1,4 @@
-
-#include <app/Application.h>
+#include <Application.h>
 #include <InterfaceKit.h>
 #include <StorageKit.h>
 #include <SupportKit.h>
@@ -13,8 +12,6 @@
 
 #include "ToolTip.h"
 #include "SpinControl.h"
-
-#include "BeSANE.h"
 
 static const char * get_unit2 (SANE_Unit unit);
 
@@ -84,7 +81,7 @@ ControlsWindow::ControlsWindow
 	m_scan_button->MoveTo(r.right, 40);
 	
 	m_panel->AddChild(m_scan_button);
-	m_tooltip->SetText(m_scan_button, "Start the scan process.");
+	m_tooltip->SetText(m_scan_button, B_TRANSLATE("Start the scan process"));
 
 	r.right -= 8;
 	r.left 	+= 8;

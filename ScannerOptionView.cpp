@@ -1,20 +1,21 @@
-
-#include <app/Application.h>
-#include <app/Roster.h>		// for app_info
+#include <Application.h>
+#include <Roster.h>		// for app_info
 #include <InterfaceKit.h>
 #include <StorageKit.h>
 #include <SupportKit.h>
 #include <TranslationKit.h>
+#include <Catalog.h>
 
 #include <stdlib.h>
 
 #include "Sanity.h"
-#include "SanityStrings.h"
 #include "ScannerWindow.h"
-#include "BeSANE.h"
 #include "ScannerOptionView.h"
 #include "SpinControl.h"
 #include "CollapsableBox.h"
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "ScannerOptionView"
 
 static bool			reload_option(void *ov, void *device);
 
@@ -294,7 +295,7 @@ status_t ScannerOptionView::Build(void)
 		BMenuField *	mf;
 		BPopUpMenu *	pum;
 			
-		pum = new BPopUpMenu(_T("<pick one>"));
+		pum = new BPopUpMenu(B_TRANSLATE("<pick one>"));
 		pum->SetRadioMode(true);
 		pum->SetTargetForItems(this);
 		pum->SetTriggersEnabled(false);
@@ -395,7 +396,7 @@ status_t ScannerOptionView::Build(void)
 	default: {
 		// if (UnitLabel())
 		//	label << " (" << UnitLabel() << ")";
-		label << " " << _T("[Unsupported]");
+		label << " " << B_TRANSLATE("[Unsupported]");
 	
 		BStringView * sv;
 		sv = new BStringView(r, m_desc->name, label.String(),
@@ -745,7 +746,7 @@ status_t ScannerOptionView::UpdateValue(void)
 		if (m_desc->cap & SANE_CAP_AUTOMATIC) {
 			msg = new BMessage(SET_VALUE_MSG);
 			msg->AddBool("auto", true);
-			item = new BMenuItem(_T("Auto"), msg);
+			item = new BMenuItem(B_TRANSLATE("Auto"), msg);
 			menu->AddItem(item);
 			if (m_auto_mode)
 				item->SetMarked(true);

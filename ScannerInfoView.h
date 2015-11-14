@@ -4,7 +4,6 @@
 #include <InterfaceKit.h>
 #include <SupportKit.h>
 
-#include "BeSANE.h"
 
 class ScannerInfoView : public BView  
 {

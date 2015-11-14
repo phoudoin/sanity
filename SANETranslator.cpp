@@ -29,11 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "Sanity.h"
-#include "SanityStrings.h"
 #include "ScannerWindow.h"
-
-#include "BeSANE.h"
 
 #if DEBUG
  #define dprintf(x) printf x
@@ -146,7 +142,7 @@ Identify(	/*	required	*/
 	outInfo->capability = 0.8;	/* we're pretty good at SANE reading, though */
 	strcpy(outInfo->name, SANE_PRETTY);
 	strcpy(outInfo->MIME, SANE_MIMETYPE);
-	
+
 	dprintf(("SANETranslator: Identify: B_OK\n"));
 	return B_OK;
 }
@@ -187,9 +183,7 @@ Translate(	/*	required	*/
 	/* XXX: make that threadsafe */
 	dprintf(("SANETranslator: sane_init\n"));
 	sane_init(0, NULL);
-	
-	sanity_locale_init();
-	
+
 	dprintf(("SANETranslator: new Window\n"));
 	BRect window_rect(50, 50, 780, 580);
 	BBitmap *outBitmap = NULL;

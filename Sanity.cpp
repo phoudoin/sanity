@@ -8,13 +8,11 @@
 #include <Window.h>
 #include <Alert.h>
 #include <TextView.h>
-#include <String.h>
+#include <Catalog.h>
 
 #include "Sanity.h"
-#include "SanityStrings.h"
 #include "ScannerWindow.h"
 
-#include "BeSANE.h"
 
 const char * APPLICATION_SIGNATURE = "application/x-vnd." SOFTWARE_EDITOR "-" SOFTWARE_NAME;
 
@@ -45,7 +43,6 @@ int main()
 	Application * app;
 
 	app = new Application();
-	sanity_locale_init();
 	app->Run();
 	delete app;
 	

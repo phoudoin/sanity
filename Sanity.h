@@ -6,7 +6,7 @@
 
 #define SOFTWARE_EDITOR			"prds"
 #define SOFTWARE_NAME			"Sanity"
-#define SOFTWARE_VERSION_LABEL	"0.5a"
+#define SOFTWARE_VERSION_LABEL	"0.6"
 
 class Application : public BApplication 
 {

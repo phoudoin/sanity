@@ -3,7 +3,7 @@
 
 #include <Window.h>
 
-#include "BeSANE.h"
+#include <sane/sane.h>
 
 // Forward declarations
 class PreviewView;

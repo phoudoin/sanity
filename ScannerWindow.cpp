@@ -1,22 +1,19 @@
-
-#include <app/Application.h>
-#include <interface/Window.h>
-#include <interface/Box.h>
-#include <interface/ScrollView.h>
-#include <interface/MenuBar.h>
-#include <interface/Menu.h>
-#include <interface/MenuItem.h>
-#include <interface/MenuField.h>
-#include <interface/PopUpMenu.h>
+#include <Application.h>
+#include <Box.h>
+#include <LayoutBuilder.h>
+#include <Menu.h>
+#include <MenuBar.h>
+#include <MenuField.h>
+#include <MenuItem.h>
+#include <PopUpMenu.h>
+#include <ScrollView.h>
 #include <StorageKit.h>
 #include <SupportKit.h>
 #include <TranslationKit.h>
-#include <LayoutBuilder.h>
-
-#include "BeSANE.h"
+#include <Window.h>
+#include <Catalog.h>
 
 #include "Sanity.h"
-#include "SanityStrings.h"
 #include "ScannerWindow.h"
 #include "ControlsWindow.h"
 #include "PreviewView.h"
@@ -25,6 +22,11 @@
 #include "CollapsableBox.h"
 #include "ScannerOptionView.h"
 #include "ScannerInfoView.h"
+
+#include <BeBuild.h>
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "ScannerWindow"
 
 //#define HAVE_PRESET_MENUFIELD
 
@@ -45,19 +47,19 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 		
 	menu_bar = new BMenuBar("menu_bar");
 		
-	menu = new BMenu(_T("File"));
+	menu = new BMenu(B_TRANSLATE("File"));
 	
-	menu->AddItem(new BMenuItem(_T("Save As" B_UTF8_ELLIPSIS), new BMessage(SAVE_AS_MSG)));
+	menu->AddItem(new BMenuItem(B_TRANSLATE("Save as" B_UTF8_ELLIPSIS), new BMessage(SAVE_AS_MSG)));
 
 	menu->AddSeparatorItem();
 
-	item = new BMenuItem(_T("About"), new BMessage(B_ABOUT_REQUESTED));
+	item = new BMenuItem(B_TRANSLATE("About"), new BMessage(B_ABOUT_REQUESTED));
 	item->SetTarget(be_app);
 	menu->AddItem(item);
 
 	menu->AddSeparatorItem();
 
-	item = new BMenuItem(_T("Quit"), new BMessage(B_QUIT_REQUESTED), 'Q');
+	item = new BMenuItem(B_TRANSLATE("Quit"), new BMessage(B_QUIT_REQUESTED), 'Q');
 	item->SetTarget(be_app);
 	menu->AddItem(item);
 
@@ -79,24 +81,24 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	m_devices_roster_thread_id 	= -1;
 	m_scan_thread_id			= -1;
 	
-	m_devices_menu = new BPopUpMenu(_T("<none available>"));
+	m_devices_menu = new BPopUpMenu(B_TRANSLATE("<none available>"));
 	m_devices_menu->SetRadioMode(true);
-	menu_field = new BMenuField("device_menu", _T( DEVICE_LABEL ), m_devices_menu,
+	menu_field = new BMenuField("device_menu", B_TRANSLATE( DEVICE_LABEL ), m_devices_menu,
 				B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
 
-	menu_field->SetToolTip(_T("Please select a device."));
+	menu_field->SetToolTip(B_TRANSLATE("Please select a device"));
 
-	m_accept_button = new BButton("Accept", _T("Accept"), new BMessage(ACCEPT_MSG),
+	m_accept_button = new BButton("Accept", B_TRANSLATE("Accept"), new BMessage(ACCEPT_MSG),
 				B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
 	m_accept_button->SetEnabled(true);
-	m_accept_button->SetToolTip(_T("Accept the current picture."));
+	m_accept_button->SetToolTip(B_TRANSLATE("Accept the current picture."));
 	m_accept_button->Hide();
 
-	m_scan_button = new BButton("Scan", _T(SCAN_LABEL), new BMessage(SCAN_MSG),								
+	m_scan_button = new BButton("Scan", B_TRANSLATE(SCAN_LABEL), new BMessage(SCAN_MSG),
 								B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
 	m_scan_button->MakeDefault(true);
 	
-	m_scan_button->SetToolTip(_T("Start the scan process."));
+	m_scan_button->SetToolTip(B_TRANSLATE("Start the scan process"));
 
 	m_status_bar = new BStatusBar("StatusBar");
 	m_status_bar->SetFlags(m_status_bar->Flags() | (B_WILL_DRAW | B_FRAME_EVENTS));	
@@ -163,14 +165,14 @@ void ScannerWindow::MessageReceived
 		{
 		case SAVE_AS_MSG: {
 			if ( ! m_image ) {
-				BAlert *alert = new BAlert(NULL, _T("No image to save."), _T("Doh!"),
+				BAlert *alert = new BAlert(NULL, B_TRANSLATE("No image to save."), B_TRANSLATE("Doh!"),
 									NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT);
 				alert->Go();
 				break;
 			};
 		
 			if ( ! m_save_panel )				
-				m_save_panel = new TranslatorSavePanel(_T("TranslatorSavePanel"),
+				m_save_panel = new TranslatorSavePanel(B_TRANSLATE("TranslatorSavePanel"),
 											new BMessenger(this), NULL, 0, false,
 											new BMessage(SAVE_FILE_PANEL_MSG)); 
 	
@@ -206,7 +208,7 @@ void ScannerWindow::MessageReceived
 			// Clobber any existing file or create a new one if it didn't exist
 			BFile file(&bdir, name, B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
 			if (file.InitCheck() != B_OK) {
-				BAlert *alert = new BAlert(NULL, _T("Could not create file."), _T("OK"));
+				BAlert *alert = new BAlert(NULL, B_TRANSLATE("Could not create file."), B_TRANSLATE("OK"));
 				alert->Go();
 				break;
 			};
@@ -217,7 +219,7 @@ void ScannerWindow::MessageReceived
 			// If the id is no longer valid or the translator fails for any other
 			// reason, catch it here
 			if ( roster->Translate(*id, &stream, NULL, &file, format) != B_OK) {
-				BAlert * alert = new BAlert(NULL, _T("Could not save the image."), _T("OK"));
+				BAlert * alert = new BAlert(NULL, B_TRANSLATE("Could not save the image."), B_TRANSLATE("OK"));
 				alert->Go();
 			};
 	
@@ -330,7 +332,7 @@ void ScannerWindow::MessageReceived
 			{
 			if ( ! m_image )
 				{
-				BAlert *alert = new BAlert(NULL, _T("No image to save."), _T("Doh!"),
+				BAlert *alert = new BAlert(NULL, B_TRANSLATE("No image to save."), B_TRANSLATE("Doh!"),
 									NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT);
 				alert->Go();
 				break;
@@ -386,7 +388,7 @@ status_t ScannerWindow::SetDevice(BMessage *msg)
 	status = sane_open(device_info->name, &device);
 	if ( status != SANE_STATUS_GOOD )	{
 	 	fprintf (stderr, "sane_open(%s): %s\n", device_info->name, sane_strstatus (status));
-		BAlert * alert = new BAlert("sane_open", sane_strstatus(status), _T("Argh"));
+		BAlert * alert = new BAlert("sane_open", sane_strstatus(status), B_TRANSLATE("Argh"));
 		alert->Go();
 		return B_ERROR;
 	};
@@ -478,7 +480,7 @@ status_t ScannerWindow::BuildControls()
 		if (!box) {
 			// No options group box created so far
 			// Create a default one, non collapsable (we don't have a group name!), to host them
-			box = new CollapsableBox(r, NULL, _T("Main options"), new BMessage(StackView::RESTACK_MSG), B_FOLLOW_TOP | B_FOLLOW_LEFT_RIGHT); 
+			box = new CollapsableBox(r, NULL, B_TRANSLATE("Main options"), new BMessage(StackView::RESTACK_MSG), B_FOLLOW_TOP | B_FOLLOW_LEFT_RIGHT);
 			box->SetTarget(m_options_stack);
 			box->GetPreferredSize(&w, &box_height);
 			box->SetFont(be_bold_font);
@@ -568,7 +570,7 @@ int32 ScannerWindow::ScanThread()
 
 	m_status_bar->Show();
 	rgb_color default_color = m_status_bar->BarColor();
-	m_scan_button->SetLabel(_T( "Cancel"));
+	m_scan_button->SetLabel(B_TRANSLATE( "Cancel"));
 //	m_status_bar->Reset(_T("Scanning..."));
 	if (!m_standalone && !m_accept_button->IsHidden()) {
 		m_accept_button->Hide();
@@ -616,7 +618,7 @@ int32 ScannerWindow::ScanThread()
 						((parm.depth == 1) ? B_GRAY1 : B_RGBA32));
 				
 				if (! image) {
-					BAlert * alert = new BAlert("BBitmap", _T("Failed to create image buffer"), _T("Glup."));
+					BAlert * alert = new BAlert("BBitmap", B_TRANSLATE("Failed to create image buffer"), B_TRANSLATE("Glup."));
 					alert->Go();
 					break;
 				};
@@ -628,7 +630,7 @@ int32 ScannerWindow::ScanThread()
 					 "variable height at %d bits/pixel\n",
 			 		parm.pixels_per_line, 8 * parm.bytes_per_line / parm.pixels_per_line);
 		
-			BAlert * alert = new BAlert("Well...", _T("Variable height scanning not supported (yet?)"), _T("Sorry"));
+			BAlert * alert = new BAlert("Well...", B_TRANSLATE("Variable height scanning not supported (yet?)"), B_TRANSLATE("Sorry"));
 			alert->Go();
 			break;
 		};
@@ -691,7 +693,7 @@ int32 ScannerWindow::ScanThread()
 			if (status != SANE_STATUS_GOOD) {
 				fprintf (stderr, "sane_read: %s\n", sane_strstatus (status));
 
-				BAlert * alert = new BAlert("sane_read()", sane_strstatus(status), _T("Glup."));
+				BAlert * alert = new BAlert("sane_read()", sane_strstatus(status), B_TRANSLATE("Glup."));
 				alert->Go();
 				break;
 			};
@@ -836,7 +838,7 @@ int32 ScannerWindow::ScanThread()
 	sane_cancel(m_device);
 	
 	Lock();
-	m_scan_button->SetLabel(_T("Scan"));
+	m_scan_button->SetLabel(B_TRANSLATE("Scan"));
 	m_status_bar->Hide();
 	m_status_bar->SetBarColor(default_color);
 
@@ -902,13 +904,13 @@ int32 ScannerWindow::DevicesRosterThread()
 					sane_close(device); break;
 					
 				case SANE_STATUS_DEVICE_BUSY:
-					label << " " << _T("[busy]"); break;
+					label << " " << B_TRANSLATE("[busy]"); break;
 					
 				case SANE_STATUS_ACCESS_DENIED:
-					label << " " << _T("[access denied]"); break;
+					label << " " << B_TRANSLATE("[access denied]"); break;
 					
 				default:
-					label << " " << _T("[error]"); break;
+					label << " " << B_TRANSLATE("[error]"); break;
 				};
 
 			item = new BMenuItem(label.String(), msg);
@@ -938,7 +940,7 @@ status_t ScannerWindow::AddDeviceInfoBox()
 		return B_ERROR;
 	
 	r = m_options_stack->Bounds();
-	box = new CollapsableBox(r, "device_info", _T("Device info"),
+	box = new CollapsableBox(r, "device_info", B_TRANSLATE("Device info"),
 			new BMessage(StackView::RESTACK_MSG), B_FOLLOW_TOP | B_FOLLOW_LEFT_RIGHT);
 	if (!box)
 		return B_ERROR;

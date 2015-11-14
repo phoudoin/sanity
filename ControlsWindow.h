@@ -4,7 +4,6 @@
 #include <InterfaceKit.h>
 
 #include "ScannerWindow.h"
-#include "BeSANE.h"
 
 class ControlsWindow : public BWindow  
 {

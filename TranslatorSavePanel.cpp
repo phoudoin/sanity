@@ -1,15 +1,18 @@
-// #include "Common.h"
 #include "TranslatorSavePanel.h"
-#include <interface/Window.h>
-#include <interface/View.h>
-#include <interface/Alert.h>
-#include <interface/ScrollBar.h>
-#include <interface/Button.h>
+#include <Window.h>
+#include <View.h>
+#include <Alert.h>
+#include <ScrollBar.h>
+#include <Button.h>
+#include <Catalog.h>
 #include <TranslationKit.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "SanityStrings.h"
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "ScannerWindow"
 
 TranslatorMenuItem::TranslatorMenuItem(const char *name, BMessage *message,
 	translator_id id, uint32 format) : BMenuItem(name, message) {
@@ -27,7 +30,7 @@ TranslatorSavePanel::TranslatorSavePanel(const char *name, BMessenger *target, e
 
 	configwindow = NULL;
 	if (Window()->Lock()) {
-		Window()->SetTitle(_T( "Save Image" ));
+		Window()->SetTitle(B_TRANSLATE( "Save image" ));
 		
 		// Find all the views that are in the way and move up them up 10 pixels
 		BView *background = Window()->ChildAt(0);
@@ -57,9 +60,9 @@ TranslatorSavePanel::TranslatorSavePanel(const char *name, BMessenger *target, e
 		// Build the "Settings" button relative to the cancel button
 		BRect rect = cancel->Frame();
 		rect.right = rect.left - 10;
-		float width = be_plain_font->StringWidth(_T("Settings...")) + 20;
+		float width = be_plain_font->StringWidth(B_TRANSLATE("Settings" B_UTF8_ELLIPSIS)) + 20;
 		rect.left = (width > 75) ? rect.right - width : rect.right - 75;
-		BButton *settings = new BButton(rect, "Settings", _T("Settings..."), new BMessage(SAVE_FILE_PANEL_SETTINGS),
+		BButton *settings = new BButton(rect, "Settings", B_TRANSLATE("Settings" B_UTF8_ELLIPSIS), new BMessage(SAVE_FILE_PANEL_SETTINGS),
 			B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM, B_WILL_DRAW | B_NAVIGABLE);
 		background->AddChild(settings);
 		settings->SetTarget(this);
@@ -71,10 +74,10 @@ TranslatorSavePanel::TranslatorSavePanel(const char *name, BMessenger *target, e
 		rect = textview->Frame();
 		rect.top = hscrollbar->Frame().bottom + 5;
 		rect.bottom = rect.top + 10;
-		formatmenufield = new BMenuField(rect, "FormatMenuField", _T( "Format:"), formatpopupmenu,
+		formatmenufield = new BMenuField(rect, "FormatMenuField", B_TRANSLATE( "Format:"), formatpopupmenu,
 			B_FOLLOW_LEFT | B_FOLLOW_BOTTOM, B_WILL_DRAW | B_NAVIGABLE);
 		background->AddChild(formatmenufield);
-		formatmenufield->SetDivider(be_plain_font->StringWidth(_T("Format:")) + 7);
+		formatmenufield->SetDivider(be_plain_font->StringWidth(B_TRANSLATE("Format:")) + 7);
 		
 		// Set the file panel's message to the first available translator
 		// Use the 'what' field of the supplied message as a model
