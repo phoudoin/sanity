@@ -63,13 +63,13 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 		// About
 		// Quit
 		
-		item = new BMenuItem(_T("New Window"), new BMessage(Application::NEW_WINDOW_MSG), 'N');
-		item->SetTarget(be_app);
-		menu->AddItem(item);
+		//item = new BMenuItem(_T("New Window"), new BMessage(Application::NEW_WINDOW_MSG), 'N');
+		//item->SetTarget(be_app);
+		//menu->AddItem(item);
 
-		menu->AddItem(new BMenuItem(_T("Close"), new BMessage(B_QUIT_REQUESTED), 'W'));
+		//menu->AddItem(new BMenuItem(_T("Close"), new BMessage(B_QUIT_REQUESTED), 'W'));
 
-		menu->AddSeparatorItem();
+		//menu->AddSeparatorItem();
 
 		menu->AddItem(new BMenuItem(_T("Save As" B_UTF8_ELLIPSIS), new BMessage(SAVE_AS_MSG)));
 		
@@ -78,6 +78,8 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 		item = new BMenuItem(_T("About"), new BMessage(B_ABOUT_REQUESTED));
 		item->SetTarget(be_app);
 		menu->AddItem(item);
+		
+		menu->AddSeparatorItem();
 
 		item = new BMenuItem(_T("Quit"), new BMessage(B_QUIT_REQUESTED), 'Q');
 		item->SetTarget(be_app);
