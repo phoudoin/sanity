@@ -3,8 +3,8 @@
 
 
 PreviewView::PreviewView(BRect frame, BRect geometry)
-	: BView(frame, "PreviewView",
-			B_FOLLOW_ALL_SIDES, B_WILL_DRAW|B_FRAME_EVENTS | B_FULL_UPDATE_ON_RESIZE)
+	: BView(frame, "PreviewView", B_FOLLOW_ALL_SIDES,
+	B_WILL_DRAW | B_FRAME_EVENTS | B_FULL_UPDATE_ON_RESIZE)
 {
 	m_geometry 		= geometry;
 	
@@ -63,6 +63,9 @@ BRect PreviewView::CenterImage()
 
 void PreviewView::Draw(BRect invalid)
 {
+	SetDrawingMode(B_OP_ALPHA);
+	SetBlendingMode(B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
+
 	BRect r = CenterImage();
 	
 	SetLowColor(m_background_color);
@@ -84,7 +87,7 @@ void PreviewView::Draw(BRect invalid)
 	r.InsetBy(1, 1);
 
 	if (m_image)
-		DrawBitmapAsync(m_image, m_image->Bounds(), r);
+		DrawBitmap(m_image, m_image->Bounds(), r, B_FILTER_BITMAP_BILINEAR);
 	else {
 		SetHighColor(255, 255, 255, 255);
 		FillRect(r);

@@ -191,7 +191,7 @@ Translate(	/*	required	*/
 	sanity_locale_init();
 	
 	dprintf(("SANETranslator: new Window\n"));
-	BRect window_rect(50, 50, 800, 480);
+	BRect window_rect(50, 50, 690, 530);
 	BBitmap *outBitmap = NULL;
 	window = new ScannerWindow(window_rect, &outBitmap);
 	window->Show();
