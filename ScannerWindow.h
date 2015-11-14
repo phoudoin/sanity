@@ -43,7 +43,7 @@ public:
 			SCAN_MSG 			= 'scan',
 			UPDATED_IMAGE_MSG	= 'uimg',
 			FORMAT_CHANGED_MSG	= 'parc',
-			ACCEPT_MSG			= 'accp'
+			ACCEPT_MSG			= 'accp'			
 		};
 				
 		// Virtual function overrides
@@ -60,6 +60,7 @@ virtual	bool	QuitRequested(void);
 		status_t				AddDeviceInfoBox();
 
 		int32					DevicesRosterThread();
+		void					RescanDevices();
 		int32					ScanThread();
 
 		static	int32			_DevicesRosterThread(void * p) { return ((ScannerWindow *) p)->DevicesRosterThread(); }

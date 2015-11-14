@@ -58,7 +58,7 @@ int main()
 Application::Application()
 	: BApplication(APPLICATION_SIGNATURE)
 {
-	window_rect.Set(50, 50, 640, 480);
+	window_rect.Set(50, 50, 800, 480);
 	windows_count = 0;
 	
 	sane_init(0, authenticate);

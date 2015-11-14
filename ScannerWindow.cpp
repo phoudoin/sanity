@@ -69,11 +69,11 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 
 		menu->AddItem(new BMenuItem(_T("Close"), new BMessage(B_QUIT_REQUESTED), 'W'));
 
-		menu->AddSeparatorItem();	// -----------
+		menu->AddSeparatorItem();
 
 		menu->AddItem(new BMenuItem(_T("Save As" B_UTF8_ELLIPSIS), new BMessage(SAVE_AS_MSG)));
-
-		menu->AddSeparatorItem();	// ------------
+		
+		menu->AddSeparatorItem();
 
 		item = new BMenuItem(_T("About"), new BMessage(B_ABOUT_REQUESTED));
 		item->SetTarget(be_app);
@@ -121,7 +121,7 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	
 	m_options_rect.top = menu_field->Frame().bottom + 5;
 #else
-	m_options_rect.top = 65;
+	m_options_rect.top = 82;
 #endif /* HAVE_PRESET_MENUFIELD */
 
 	r = Bounds();
@@ -172,8 +172,9 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 
 	m_tooltip->SetText(menu_field, _T("Please select a device."));
 	
-	//r.top += h+1;
+	r.top += h + 1;
 	float progress_top = r.top;
+	r.top += 12;
 	
 	m_accept_button = NULL;
 	if (!m_standalone) {
@@ -184,12 +185,12 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 		m_panel->AddChild(m_accept_button);
 		m_accept_button->GetPreferredSize(&w, &h);
 		m_accept_button->ResizeToPreferred();
-		//r.right -= (w + 12);
-		m_accept_button->MoveTo(r.right - (w + 12), r.top);
+		m_accept_button->MoveTo(r.right - w, r.top);
 		m_accept_button->SetEnabled(false);
 		
 		m_tooltip->SetText(m_accept_button, _T("Accept the current picture."));
-		r.top += h+5;
+		r.top += h + 2;
+		m_options_rect.top += 26;
 	}
 
 	m_scan_button = new BButton(r, NULL, _T(SCAN_LABEL), new BMessage(SCAN_MSG),
@@ -200,16 +201,15 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	m_panel->AddChild(m_scan_button);
 	m_scan_button->GetPreferredSize(&w, &h);
 	m_scan_button->ResizeToPreferred();
-	r.right -= (w + 12);
+	r.right -= w;
 	m_scan_button->MoveTo(r.right, r.top);
 	
 	m_tooltip->SetText(m_scan_button, _T("Start the scan process."));
 
 
 	r.right -= 8;
-	r.top = progress_top;
 
-	m_status_bar = new BStatusBar(r, NULL, _T("Scanning..."), "1.58 Mb");
+	m_status_bar = new BStatusBar(r, NULL, _T("Scanning..."), "");
 	//box->AddChild(m_status_bar);
 	m_panel->AddChild(m_status_bar);
 	m_status_bar->SetResizingMode(B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP);
@@ -221,9 +221,8 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 
 	m_options_stack = NULL;
 	m_options_scroller = NULL;
-	
-	m_devices_roster_thread_id = spawn_thread(_DevicesRosterThread, "devices_roster", B_NORMAL_PRIORITY, this);
-	resume_thread(m_devices_roster_thread_id);
+
+	RescanDevices();
 }
 
 
@@ -255,7 +254,7 @@ bool ScannerWindow::QuitRequested()
 void ScannerWindow::MessageReceived
 	(
 	BMessage *	msg
-	)
+	) 
 {
 	switch (msg->what)
 		{
@@ -442,8 +441,6 @@ void ScannerWindow::MessageReceived
 
 			break;
 			};
-			
-
 
 		default:	
 			inherited::MessageReceived(msg);
@@ -950,6 +947,16 @@ int32 ScannerWindow::ScanThread()
 	return B_OK;
 }
 
+void ScannerWindow::RescanDevices()
+{
+	status_t ret;
+	
+	if ( DevicesRosterThreadID() >= 0 )
+		wait_for_thread(DevicesRosterThreadID(), &ret);	
+	
+	m_devices_roster_thread_id = spawn_thread(_DevicesRosterThread, "devices_roster", B_NORMAL_PRIORITY, this);
+	resume_thread(m_devices_roster_thread_id);
+}
 
 // --------------------------------------------------------------
 int32 ScannerWindow::DevicesRosterThread()
@@ -958,6 +965,11 @@ int32 ScannerWindow::DevicesRosterThread()
 	SANE_Status				status;
 	const SANE_Device ** 	devices_list;
 	SANE_Handle				device;
+
+	system("scanimage -L");
+
+	while ( (item = m_devices_menu->RemoveItem((int32)0)) != NULL)
+		delete item;
 
 	status = sane_get_devices(&devices_list, SANE_FALSE);
     if (status == SANE_STATUS_GOOD)
@@ -1001,6 +1013,8 @@ int32 ScannerWindow::DevicesRosterThread()
 				item->SetEnabled(false);
 				
 			m_devices_menu->AddItem(item);
+			item->SetMarked(true);
+			PostMessage(msg);
 			};
 		};
 
