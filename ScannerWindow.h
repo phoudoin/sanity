@@ -8,7 +8,6 @@
 // Forward declarations
 class PreviewView;
 class BitmapView;
-class ToolTip;
 class StackView;
 class TranslatorSavePanel;
 class BBox;

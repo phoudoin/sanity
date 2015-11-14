@@ -5,8 +5,6 @@
 
 #include "ScannerWindow.h"
 #include "BeSANE.h"
-#include "ToolTip.h"
-
 
 class ControlsWindow : public BWindow  
 {
@@ -47,7 +45,6 @@ class ControlsWindow : public BWindow
 		const SANE_Device *		m_device_info;
 
 		ScannerWindow *			m_parent_window;
-		ToolTip *				m_tooltip;
 		
 		BBox *					m_panel;
 		BMenuField * 			m_devices_field;

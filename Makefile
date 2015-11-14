@@ -28,30 +28,35 @@ APP_MIME_SIG = application/x-vnd.prds-Sanity
 #	means this Makefile will not work correctly if two source files with the
 #	same name (source.c or source.cpp) are included from different directories.
 #	Also note that spaces in folder names do not work well with this Makefile.
-SRCS= \
-Sanity.cpp \
-ScannerWindow.cpp \
-ScannerOptionView.cpp \
-ScannerInfoView.cpp \
-PreviewView.cpp \
-CheckerBitmap.cpp \
-TranslatorSavePanel.cpp \
-ToolTip.cpp \
-SpinControl.cpp \
-SpinButton.cpp \
-CollapsableBox.cpp \
-StackView.cpp \
-SANETranslator.cpp
+SRCS = \
+	 CheckerBitmap.cpp  \
+	 CollapsableBox.cpp  \
+	 PreviewView.cpp  \
+	 SANETranslator.cpp  \
+	 Sanity.cpp  \
+	 ScannerInfoView.cpp  \
+	 ScannerOptionView.cpp  \
+	 ScannerWindow.cpp  \
+	 SpinButton.cpp  \
+	 SpinControl.cpp  \
+	 StackView.cpp  \
+	 TranslatorSavePanel.cpp  \
+
 #	Specify the resource definition files to use. Full or relative paths can be
 #	used.
-RDEFS = Resource.rdef
+RDEFS = \
+	 Resource.rdef  \
+
 
 #	Specify the resource files to use. Full or relative paths can be used.
 #	Both RDEFS and RSRCS can be utilized in the same Makefile.
-RSRCS = 
+RSRCS = \
+
 
 # End Pe/Eddie support.
 # @<-src@ 
+#%}
+
 #%}
 
 #	Specify libraries to link against.
