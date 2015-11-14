@@ -77,7 +77,6 @@ virtual	bool	QuitRequested(void);
 		BRect 					m_options_rect;
 		PreviewView *			m_preview_view;
 		BitmapView *			m_bitmap_view;
-		ToolTip *				m_tooltip;
 		BBitmap *				m_image;
 		BPopUpMenu * 			m_preset_menu;
 		BPopUpMenu * 			m_devices_menu;

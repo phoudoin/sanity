@@ -127,10 +127,10 @@ void CollapsableBox::Draw(BRect updateRect)
 
 	SetHighColor(tint_color(ViewColor(), B_LIGHTEN_MAX_TINT));
 	StrokeLine(BPoint(r.left, r.bottom), BPoint(r.left, r.top));
-	StrokeLine(BPoint(r.left+1.0f, r.top), BPoint(r.right, r.top));
+	StrokeLine(BPoint(r.left+1.0f, r.top), BPoint(r.right+1.0f, r.top));
 	SetHighColor(tint_color(ViewColor(), B_DARKEN_2_TINT));
-	StrokeLine(BPoint(r.left+1.0f, r.bottom), BPoint(r.right, r.bottom));
-	StrokeLine(BPoint(r.right, r.bottom), BPoint(r.right, r.top+1.0f));
+	StrokeLine(BPoint(r.left+1.0f, r.bottom), BPoint(r.right+1.0f, r.bottom));
+	StrokeLine(BPoint(r.right+1.0f, r.bottom), BPoint(r.right+1.0f, r.top+1.0f));
 
 	rgb_color no_tint = ui_color(B_PANEL_BACKGROUND_COLOR),
 	lighten1 = tint_color(no_tint, B_LIGHTEN_1_TINT),

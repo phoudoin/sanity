@@ -8,7 +8,7 @@ class PreviewView : public BView
 {
 	public:
 		// Constructors, destructors, operators...
-						PreviewView(BRect frame, BRect area);
+						PreviewView(BRect area);
 						~PreviewView();
 		
 		typedef BView	inherited;

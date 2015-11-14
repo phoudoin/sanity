@@ -11,6 +11,7 @@
 #include <StorageKit.h>
 #include <SupportKit.h>
 #include <TranslationKit.h>
+#include <LayoutBuilder.h>
 
 #include "BeSANE.h"
 
@@ -28,7 +29,7 @@
 //#define HAVE_PRESET_MENUFIELD
 
 // --------------------------------------------------------------
-ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
+/*ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	: BWindow(frame, SOFTWARE_NAME, B_TITLED_WINDOW, B_ASYNCHRONOUS_CONTROLS)
 {
 	BMenuBar *		menu_bar;
@@ -43,7 +44,7 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	m_save_panel = NULL;
 	
 	m_translator_out_bitmap = outBitmap;
-	m_standalone = !outBitmap; /* act as an app */
+	m_standalone = !outBitmap;
 	
 	r = Bounds();
 
@@ -124,7 +125,7 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	m_options_rect.top = menu_field->Frame().bottom + 5;
 #else
 	m_options_rect.top = 82;
-#endif /* HAVE_PRESET_MENUFIELD */
+#endif
 
 	r = Bounds();
 	if (m_standalone)
@@ -225,7 +226,108 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	m_options_scroller = NULL;
 
 	RescanDevices();
+}*/
+
+ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
+	: BWindow(frame, SOFTWARE_NAME, B_TITLED_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
+			B_AUTO_UPDATE_SIZE_LIMITS | B_ASYNCHRONOUS_CONTROLS)
+{
+	BMenuBar *		menu_bar;
+	BMenu *			menu;
+	BMenuItem *		item;
+	BMenuField *	menu_field;
+	
+	m_image = NULL;
+	m_save_panel = NULL;
+	
+	m_translator_out_bitmap = outBitmap;
+	m_standalone = !outBitmap; /* act as an app */
+		
+	menu_bar = new BMenuBar("menu_bar");
+		
+	menu = new BMenu(_T("File"));
+	
+	menu->AddItem(new BMenuItem(_T("Save As" B_UTF8_ELLIPSIS), new BMessage(SAVE_AS_MSG)));
+
+	menu->AddSeparatorItem();
+
+	item = new BMenuItem(_T("About"), new BMessage(B_ABOUT_REQUESTED));
+	item->SetTarget(be_app);
+	menu->AddItem(item);
+
+	menu->AddSeparatorItem();
+
+	item = new BMenuItem(_T("Quit"), new BMessage(B_QUIT_REQUESTED), 'Q');
+	item->SetTarget(be_app);
+	menu->AddItem(item);
+
+	menu_bar->AddItem(menu);
+	
+	if (!m_standalone)
+		menu_bar->Hide();
+	
+	// Add a scan panel
+	m_panel = new BBox("panel", B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE_JUMP, B_FANCY_BORDER);
+	//m_panel->SetExplicitSize(BSize(192, B_SIZE_UNSET));
+
+	m_preview_view = new PreviewView(BRect(0, 0, 2100, 2970));
+	//m_panel->SetExplicitMinSize(BSize(256, B_SIZE_UNSET));
+
+	m_device		= NULL;
+	m_device_info	= NULL;
+	
+	m_devices_roster_thread_id 	= -1;
+	m_scan_thread_id			= -1;
+	
+	m_devices_menu = new BPopUpMenu(_T("<none available>"));
+	m_devices_menu->SetRadioMode(true);
+	menu_field = new BMenuField("device_menu", _T( DEVICE_LABEL ), m_devices_menu,
+				B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
+
+	menu_field->SetToolTip(_T("Please select a device."));
+
+	m_accept_button = new BButton("Accept", _T("Accept"), new BMessage(ACCEPT_MSG),
+				B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
+	m_accept_button->SetEnabled(true);
+	m_accept_button->SetToolTip(_T("Accept the current picture."));
+	m_accept_button->Hide();
+
+	m_scan_button = new BButton("Scan", _T(SCAN_LABEL), new BMessage(SCAN_MSG),								
+								B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
+	m_scan_button->MakeDefault(true);
+	
+	m_scan_button->SetToolTip(_T("Start the scan process."));
+
+	m_status_bar = new BStatusBar("StatusBar");
+	m_status_bar->SetFlags(m_status_bar->Flags() | (B_WILL_DRAW | B_FRAME_EVENTS));	
+	
+	BLayoutBuilder::Group<>(this, B_VERTICAL)
+		.SetInsets(0, 0, 0, 0)
+		.Add(menu_bar)
+		.AddSplit(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
+		.AddGroup(B_HORIZONTAL)		
+			.AddGroup(B_VERTICAL)
+				.SetInsets(B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING)
+				.AddGroup(B_HORIZONTAL)
+					.Add(menu_field)
+					.Add(m_scan_button)
+				.End()
+				.Add(m_status_bar)
+				.Add(m_accept_button)
+				.Add(m_panel)
+			.End()
+			.AddGroup(B_VERTICAL)
+				.SetInsets(B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING)
+				.Add(m_preview_view)
+			.End()
+		.End();
+
+	m_options_stack = NULL;
+	m_options_scroller = NULL;
+	
+	RescanDevices();
 }
+
 
 
 // --------------------------------------------------------------
@@ -514,8 +616,8 @@ status_t ScannerWindow::BuildControls()
 	if (m_options_scroller)
 		m_options_scroller->RemoveSelf();
 				
-	r = m_options_rect;
-	r.right 	-= B_V_SCROLL_BAR_WIDTH+1;
+	r = m_panel->Bounds();
+	r.right	-= B_V_SCROLL_BAR_WIDTH + 32;
 
 	delete m_options_stack;
 	delete m_options_scroller;
@@ -613,7 +715,7 @@ status_t ScannerWindow::BuildControls()
 			nb_advanced_opts++;
 						
 		if (strlen(desc->desc))
-			m_tooltip->SetText(ov, desc->desc);
+			ov->SetToolTip(desc->desc);
 
 	} 	// for every scanner options
 	
@@ -668,9 +770,10 @@ int32 ScannerWindow::ScanThread()
 	m_status_bar->Show();
 	rgb_color default_color = m_status_bar->BarColor();
 	m_scan_button->SetLabel(_T( "Cancel"));
-	m_status_bar->Reset(_T("Scanning..."));
-	if (m_accept_button && m_accept_button->IsEnabled())
-		m_accept_button->SetEnabled(false);
+//	m_status_bar->Reset(_T("Scanning..."));
+	if (!m_standalone && !m_accept_button->IsHidden()) {
+		m_accept_button->Hide();
+	}
 
 	Unlock();
 	
@@ -938,8 +1041,8 @@ int32 ScannerWindow::ScanThread()
 	m_status_bar->Hide();
 	m_status_bar->SetBarColor(default_color);
 
-	if (m_accept_button && !m_accept_button->IsEnabled()) {
-		m_accept_button->SetEnabled(true);
+	if (!m_standalone && m_accept_button->IsHidden()) {
+		m_accept_button->Show();
 		m_accept_button->MakeDefault(true);
 	}
 

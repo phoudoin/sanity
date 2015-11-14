@@ -2,9 +2,8 @@
 #include "CheckerBitmap.h"
 
 
-PreviewView::PreviewView(BRect frame, BRect geometry)
-	: BView(frame, "PreviewView", B_FOLLOW_ALL_SIDES,
-	B_WILL_DRAW | B_FRAME_EVENTS | B_FULL_UPDATE_ON_RESIZE)
+PreviewView::PreviewView(BRect geometry)
+	: BView("PreviewView", B_WILL_DRAW | B_FRAME_EVENTS | B_FULL_UPDATE_ON_RESIZE)
 {
 	m_geometry 		= geometry;
 	
