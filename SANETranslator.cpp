@@ -53,7 +53,7 @@ extern const char * STR_ABOUT_TEXT;
 /*	Sanity is a frontend for SANE...	*/
 #define SANE_TYPE 'SANE'
 
-#define SANE_MIMETYPE "image/x-vnd.yT-sane-scanner-wrapper"
+#define SANE_MIMETYPE "image/x-vnd.sane-scanner-wrapper"
 #define SANE_PRETTY "Scanner Device"
 
 
@@ -191,7 +191,7 @@ Translate(	/*	required	*/
 	sanity_locale_init();
 	
 	dprintf(("SANETranslator: new Window\n"));
-	BRect window_rect(50, 50, 500, 500);
+	BRect window_rect(50, 50, 800, 480);
 	BBitmap *outBitmap = NULL;
 	window = new ScannerWindow(window_rect, &outBitmap);
 	window->Show();
