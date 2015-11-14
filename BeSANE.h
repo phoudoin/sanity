@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "sane.h"
+#include <sane/sane.h>
 
 #ifdef __cplusplus
 }
