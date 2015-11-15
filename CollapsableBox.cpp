@@ -46,6 +46,7 @@ CollapsableBox::CollapsableBox
 void CollapsableBox::AttachedToWindow(void)
 {
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+	SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	// if (Parent())
 	//	SetViewColor(Parent()->ViewColor());
 }
