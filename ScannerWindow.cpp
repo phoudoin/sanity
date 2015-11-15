@@ -69,11 +69,9 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 		menu_bar->Hide();
 	
 	// Add a scan panel
-	m_panel = new BBox("panel", B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE_JUMP, B_FANCY_BORDER);
-	//m_panel->SetExplicitSize(BSize(192, B_SIZE_UNSET));
+	m_panel = new BBox("panel", B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE_JUMP, B_PLAIN_BORDER);
 
 	m_preview_view = new PreviewView(BRect(0, 0, 2100, 2970));
-	//m_panel->SetExplicitMinSize(BSize(256, B_SIZE_UNSET));
 
 	m_device		= NULL;
 	m_device_info	= NULL;
@@ -92,39 +90,61 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 				B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
 	m_accept_button->SetEnabled(true);
 	m_accept_button->SetToolTip(B_TRANSLATE("Accept the current picture."));
-	m_accept_button->Hide();
+	if (m_standalone)
+		m_accept_button->Hide();
+	else
+		m_accept_button->SetEnabled(false);
 
 	m_scan_button = new BButton("Scan", B_TRANSLATE(SCAN_LABEL), new BMessage(SCAN_MSG),
 								B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
 	m_scan_button->MakeDefault(true);
-	
 	m_scan_button->SetToolTip(B_TRANSLATE("Start the scan process"));
+	
+	m_close_button = new BButton("Close", B_TRANSLATE("Close"), new BMessage(B_QUIT_REQUESTED),
+								B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
+	m_close_button->SetToolTip(B_TRANSLATE("Close application"));
+	
+	m_save_as_button = new BButton("Save As", B_TRANSLATE("Save as" B_UTF8_ELLIPSIS),
+								new BMessage(SAVE_AS_MSG), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
+	m_save_as_button->SetToolTip(B_TRANSLATE("Save scanned image as" B_UTF8_ELLIPSIS));
+	if (!m_standalone)
+		m_save_as_button->Hide();
 
 	m_status_bar = new BStatusBar("StatusBar");
-	m_status_bar->SetFlags(m_status_bar->Flags() | (B_WILL_DRAW | B_FRAME_EVENTS));	
+	m_status_bar->SetFlags(m_status_bar->Flags() | (B_WILL_DRAW | B_FRAME_EVENTS));
 	
-	BLayoutBuilder::Group<>(this, B_VERTICAL)
+	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 		.SetInsets(0, 0, 0, 0)
 		.Add(menu_bar)
-		.AddSplit(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
-			.AddGroup(B_VERTICAL)
-				.SetInsets(B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING)
-				.AddGroup(B_HORIZONTAL)
-					.Add(menu_field)
-					.Add(m_scan_button)
-				.End()
-				.Add(m_status_bar)
-				.Add(m_accept_button)
+		.AddSplit(B_HORIZONTAL, 0)
+			.AddGroup(B_VERTICAL, B_USE_HALF_ITEM_SPACING)
+				.SetInsets( B_USE_HALF_ITEM_SPACING, B_USE_HALF_ITEM_SPACING,
+							B_USE_HALF_ITEM_SPACING, B_USE_HALF_ITEM_SPACING)
+				.Add(menu_field)
 				.Add(m_panel)
+				.Add(m_status_bar)
 			.End()
-			.AddGroup(B_VERTICAL)
-				.SetInsets(B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING)
+			.AddGroup(B_VERTICAL, 0)
+				.SetInsets( B_USE_HALF_ITEM_SPACING, B_USE_HALF_ITEM_SPACING,
+							B_USE_HALF_ITEM_SPACING, B_USE_HALF_ITEM_SPACING)
 				.Add(m_preview_view)
+				.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
+					.SetInsets(0, B_USE_DEFAULT_SPACING, 0, 0)
+					.SetExplicitAlignment(BAlignment(B_ALIGN_CENTER, B_ALIGN_BOTTOM))
+					.AddGlue()
+					.Add(m_scan_button)
+					.Add(m_accept_button)
+					.Add(m_save_as_button)
+					.Add(m_close_button)
+					.AddGlue()
+				.End()				
 			.End()
 		.End();
 
 	m_options_stack = NULL;
 	m_options_scroller = NULL;
+	
+	CenterOnScreen();
 	
 	RescanDevices();
 }
@@ -568,12 +588,11 @@ int32 ScannerWindow::ScanThread()
 
 	Lock();
 
-	m_status_bar->Show();
 	rgb_color default_color = m_status_bar->BarColor();
 	m_scan_button->SetLabel(B_TRANSLATE( "Cancel"));
-//	m_status_bar->Reset(_T("Scanning..."));
-	if (!m_standalone && !m_accept_button->IsHidden()) {
-		m_accept_button->Hide();
+	m_status_bar->Reset();
+	if (!m_standalone && !m_accept_button->IsEnabled()) {
+		m_accept_button->SetEnabled(false);
 	}
 
 	Unlock();
@@ -839,11 +858,11 @@ int32 ScannerWindow::ScanThread()
 	
 	Lock();
 	m_scan_button->SetLabel(B_TRANSLATE("Scan"));
-	m_status_bar->Hide();
+	m_status_bar->Reset();
 	m_status_bar->SetBarColor(default_color);
 
-	if (!m_standalone && m_accept_button->IsHidden()) {
-		m_accept_button->Show();
+	if (!m_standalone && !m_accept_button->IsEnabled()) {
+		m_accept_button->SetEnabled(true);
 		m_accept_button->MakeDefault(true);
 	}
 
@@ -872,6 +891,7 @@ int32 ScannerWindow::DevicesRosterThread()
 	const SANE_Device ** 	devices_list;
 	SANE_Handle				device;
 
+	// Ugly hack
 	system("scanimage -L");
 
 	while ( (item = m_devices_menu->RemoveItem((int32)0)) != NULL)
@@ -886,13 +906,13 @@ int32 ScannerWindow::DevicesRosterThread()
 			BString 	label;
 			BMessage * 	msg;
 
-/*			
+			
 			if (strcmp(devices_list[i]->vendor, "Noname") != 0)
 			  label << devices_list[i]->vendor << " ";
 			if (devices_list[i]->model)
 				label << devices_list[i]->model;
-*/			if (devices_list[i]->name)
-				label << devices_list[i]->name;
+//			if (devices_list[i]->name)
+//				label << devices_list[i]->name;
 
 			msg = new BMessage(SET_DEVICE_MSG);
 			msg->AddPointer("device", devices_list[i]); 

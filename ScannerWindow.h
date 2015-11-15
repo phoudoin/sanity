@@ -81,6 +81,8 @@ virtual	bool	QuitRequested(void);
 		BPopUpMenu * 			m_devices_menu;
 		BStatusBar *			m_status_bar;
 		BButton *				m_scan_button;
+		BButton *				m_save_as_button;
+		BButton *				m_close_button;
 		BButton *				m_accept_button;
 		BScrollView *			m_options_scroller;
 		StackView *				m_options_stack;
