@@ -90,10 +90,18 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 				B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
 	m_accept_button->SetEnabled(true);
 	m_accept_button->SetToolTip(B_TRANSLATE("Accept the current picture."));
-	if (m_standalone)
+
+	m_save_as_button = new BButton("Save As", B_TRANSLATE("Save as" B_UTF8_ELLIPSIS),
+								new BMessage(SAVE_AS_MSG), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
+	m_save_as_button->SetToolTip(B_TRANSLATE("Save scanned image as" B_UTF8_ELLIPSIS));
+
+	if (m_standalone) {
+		m_save_as_button->SetEnabled(false);
 		m_accept_button->Hide();
-	else
+	} else {
 		m_accept_button->SetEnabled(false);
+		m_save_as_button->Hide();
+	}
 
 	m_scan_button = new BButton("Scan", B_TRANSLATE(SCAN_LABEL), new BMessage(SCAN_MSG),
 								B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
@@ -103,12 +111,6 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	m_close_button = new BButton("Close", B_TRANSLATE("Close"), new BMessage(B_QUIT_REQUESTED),
 								B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
 	m_close_button->SetToolTip(B_TRANSLATE("Close application"));
-	
-	m_save_as_button = new BButton("Save As", B_TRANSLATE("Save as" B_UTF8_ELLIPSIS),
-								new BMessage(SAVE_AS_MSG), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
-	m_save_as_button->SetToolTip(B_TRANSLATE("Save scanned image as" B_UTF8_ELLIPSIS));
-	if (!m_standalone)
-		m_save_as_button->Hide();
 
 	m_status_bar = new BStatusBar("StatusBar");
 	m_status_bar->SetFlags(m_status_bar->Flags() | (B_WILL_DRAW | B_FRAME_EVENTS));
@@ -557,14 +559,13 @@ status_t ScannerWindow::BuildControls()
 
 	// Modify window title
 	BString title = "";
-/*
+
+	title << SOFTWARE_NAME << " : ";
+
+	if (strcmp(m_device_info->vendor, "Noname") != 0)
+		  title << m_device_info->vendor << " ";
 	if ( strlen(m_device_info->model) )
-		title << m_device_info->model << " - ";
-	else
-*/
-	if ( strlen(m_device_info->name) )
-		title << m_device_info->name << " - ";
-	title << SOFTWARE_NAME;
+		title << m_device_info->model;
 
 	SetTitle(title.String());
 				
@@ -591,8 +592,11 @@ int32 ScannerWindow::ScanThread()
 	rgb_color default_color = m_status_bar->BarColor();
 	m_scan_button->SetLabel(B_TRANSLATE( "Cancel"));
 	m_status_bar->Reset();
-	if (!m_standalone && !m_accept_button->IsEnabled()) {
+	if (!m_standalone && m_accept_button->IsEnabled()) {
 		m_accept_button->SetEnabled(false);
+	}
+	if (m_standalone && m_save_as_button->IsEnabled()) {
+		m_save_as_button->SetEnabled(false);
 	}
 
 	Unlock();
@@ -865,6 +869,9 @@ int32 ScannerWindow::ScanThread()
 		m_accept_button->SetEnabled(true);
 		m_accept_button->MakeDefault(true);
 	}
+	if (m_standalone && !m_save_as_button->IsEnabled()) {
+		m_save_as_button->SetEnabled(true);
+	}
 
 	Unlock();
 	
@@ -897,7 +904,7 @@ int32 ScannerWindow::DevicesRosterThread()
 	while ( (item = m_devices_menu->RemoveItem((int32)0)) != NULL)
 		delete item;
 
-	status = sane_get_devices(&devices_list, SANE_FALSE);
+	status = sane_get_devices(&devices_list, SANE_TRUE);
     if (status == SANE_STATUS_GOOD)
 		{
 		int	i;
