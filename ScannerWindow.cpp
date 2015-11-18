@@ -68,7 +68,7 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 		menu_bar->Hide();
 	
 	// Add a scan panel
-	m_panel = new BBox("panel", B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE_JUMP, B_PLAIN_BORDER);
+	m_panel = new BBox("panel", B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE_JUMP, B_NO_BORDER);
 
 	m_preview_view = new PreviewView(BRect(0, 0, 2100, 2970));
 
@@ -434,18 +434,27 @@ status_t ScannerWindow::SetDevice(BMessage *msg)
 	if ( msg->FindPointer("device", (void **) &device_info) != B_OK )
 		return B_BAD_VALUE;
 	printf("Sanity:SetDevice(%s)\n", device_info->name);
+
+	// Close previous device opened, if any
+	if ( m_device )
+		sane_close(m_device);
+
 	// Try to
 	status = sane_open(device_info->name, &device);
 	if ( status != SANE_STATUS_GOOD )	{
 	 	fprintf (stderr, "sane_open(%s): %s\n", device_info->name, sane_strstatus (status));
 		BAlert * alert = new BAlert("sane_open", sane_strstatus(status), B_TRANSLATE("Argh"));
 		alert->Go();
+		// Reopen last dev
+		if ( m_device ) {
+			status = sane_open(m_device_info->name, &m_device);
+			if ( status != SANE_STATUS_GOOD ) {
+				m_device = NULL;
+				m_device_info = NULL;
+			}
+		}
 		return B_ERROR;
 	};
-
-	// Close previous device opened, if any
-	if ( m_device )
-		sane_close(m_device);
 
 	m_device = device;
 	m_device_info = device_info;
@@ -485,7 +494,7 @@ status_t ScannerWindow::BuildControls()
 										B_FOLLOW_ALL_SIDES,
 										B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE_JUMP,
 										false, true,	// vertical scrollbar
-										B_PLAIN_BORDER);	// B_FANCY_BORDER);
+										B_NO_BORDER);	// B_FANCY_BORDER);
 	m_panel->AddChild(m_options_scroller);
 
 	// printf("Options for device %s:\n", m_device_info->name);
