@@ -4,6 +4,7 @@
 #include <Window.h>
 
 #include <sane/sane.h>
+#include <sane/saneopts.h>
 
 // Forward declarations
 class PreviewView;
@@ -88,6 +89,8 @@ virtual	bool	QuitRequested(void);
 		BButton *				m_accept_button;
 		BScrollView *			m_options_scroller;
 		StackView *				m_options_stack;
+
+		SANE_Int				m_preview_resolution;
 
 		ScannerOptionView *		m_tl_x;
 		ScannerOptionView *		m_tl_y;

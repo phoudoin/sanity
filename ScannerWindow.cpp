@@ -499,6 +499,17 @@ status_t ScannerWindow::BuildControls()
 
 	// skip first option (option 0 = number of options)
 	for (int opt = 1; (desc = sane_get_option_descriptor(m_device, opt)) != NULL; opt++) {
+		if ((desc->type == SANE_TYPE_FIXED || desc->type == SANE_TYPE_INT)
+			&& desc->size == sizeof (SANE_Int)
+			&& (desc->unit == SANE_UNIT_DPI)
+			&& (strcmp (desc->name, SANE_NAME_SCAN_RESOLUTION) == 0)) {
+				m_preview_resolution = 300;
+				int cnt = desc->constraint.word_list[0];
+				for (int i = 1; i <= cnt && desc->constraint.word_list[i]; i++) {
+					if ( desc->constraint.word_list[i] < min )
+						m_preview_resolution = desc->constraint.word_list[i];
+				}
+		}
 
 		if (desc->cap & SANE_CAP_AUTOMATIC)   {
 		    status = sane_control_option(m_device, opt, SANE_ACTION_SET_AUTO, 0, 0);
@@ -558,10 +569,10 @@ status_t ScannerWindow::BuildControls()
 		ov->Hide();
 		AddChild(ov);
 
-		if (strcmp(desc->name, "tl-x")==0)m_tl_x = ov;
-		if (strcmp(desc->name, "tl-y")==0)m_tl_y = ov;
-		if (strcmp(desc->name, "br-x")==0)m_br_x = ov;
-		if (strcmp(desc->name, "br-y")==0)m_br_y = ov;
+		if (strcmp(desc->name, SANE_NAME_SCAN_TL_X)==0)m_tl_x = ov;
+		if (strcmp(desc->name, SANE_NAME_SCAN_TL_Y)==0)m_tl_y = ov;
+		if (strcmp(desc->name, SANE_NAME_SCAN_BR_X)==0)m_br_x = ov;
+		if (strcmp(desc->name, SANE_NAME_SCAN_BR_Y)==0)m_br_y = ov;
 
 		if ( ov->Build() != B_OK ) {
 			ov->RemoveSelf();
