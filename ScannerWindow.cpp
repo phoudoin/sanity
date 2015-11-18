@@ -291,6 +291,7 @@ void ScannerWindow::MessageReceived (BMessage *	msg)
 				break;
 			};
 
+			SetImage(NULL);
 			m_preview_view->SetImageFrame();
 
 			m_scan_thread_id = spawn_thread(_ScanThread, "scan", B_NORMAL_PRIORITY, this);
@@ -322,9 +323,14 @@ void ScannerWindow::MessageReceived (BMessage *	msg)
 					printf("unknown (%d) frame format!\n", parm.format);
 				};
 
-				BRect geometry(0, 0, GetSaneMaxVal(m_device, "br-x"), GetSaneMaxVal(m_device, "br-y"));
-				BRect frame(GetSaneVal(m_device, "tl-x"), GetSaneVal(m_device, "tl-y"),
+				BRect geometry(0, 0, parm.pixels_per_line, parm.lines);
+				BRect frame = geometry;
+
+				if ( m_tl_x != NULL && m_tl_y != NULL && m_br_x != NULL && m_br_y != NULL) {
+					geometry.Set(0, 0, GetSaneMaxVal(m_device, "br-x"), GetSaneMaxVal(m_device, "br-y"));
+					frame.Set(GetSaneVal(m_device, "tl-x"), GetSaneVal(m_device, "tl-y"),
 						GetSaneVal(m_device, "br-x"), GetSaneVal(m_device, "br-y"));
+				}
 
 				m_preview_view->SetGeometry(geometry);
 				m_preview_view->SetFrame(frame);
@@ -371,15 +377,22 @@ void ScannerWindow::MessageReceived (BMessage *	msg)
 				if ( msg->FindRect("rect", &rect) != B_OK )
 					break;
 
-				SetSaneVal(m_device, "tl-x", rect.left <= rect.right ? rect.left : rect.right);
-				SetSaneVal(m_device, "tl-y", rect.top <= rect.bottom ? rect.top : rect.bottom);
-				SetSaneVal(m_device, "br-x", rect.right >= rect.left ? rect.right : rect.left);
-				SetSaneVal(m_device, "br-y", rect.bottom >=rect.top ? rect.bottom : rect.top);
-
-				if (m_tl_x)m_tl_x->UpdateValue();
-				if (m_tl_y)m_tl_y->UpdateValue();
-				if (m_br_x)m_br_x->UpdateValue();
-				if (m_br_y)m_br_y->UpdateValue();
+				if (m_tl_x) {
+					SetSaneVal(m_device, "tl-x", rect.left <= rect.right ? rect.left : rect.right);
+					m_tl_x->UpdateValue();
+				}
+				if (m_tl_y) {
+					SetSaneVal(m_device, "tl-y", rect.top <= rect.bottom ? rect.top : rect.bottom);
+					m_tl_y->UpdateValue();
+				}
+				if (m_br_x) {
+					SetSaneVal(m_device, "br-x", rect.right >= rect.left ? rect.right : rect.left);
+					m_br_x->UpdateValue();
+				}
+				if (m_br_y) {
+					SetSaneVal(m_device, "br-y", rect.bottom >=rect.top ? rect.bottom : rect.top);
+					m_br_y->UpdateValue();
+				}
 
 				PostMessage(FORMAT_CHANGED_MSG);
 				break;
@@ -417,10 +430,10 @@ status_t ScannerWindow::SetDevice(BMessage *msg)
 	SANE_Status	status;
 	const SANE_Device *	device_info;
 	SANE_Handle device;
-			
+
 	if ( msg->FindPointer("device", (void **) &device_info) != B_OK )
 		return B_BAD_VALUE;
-	PRINT(("Sanity:SetDevice(%s)\n", device_info->name));
+	printf("Sanity:SetDevice(%s)\n", device_info->name);
 	// Try to
 	status = sane_open(device_info->name, &device);
 	if ( status != SANE_STATUS_GOOD )	{
@@ -430,11 +443,14 @@ status_t ScannerWindow::SetDevice(BMessage *msg)
 		return B_ERROR;
 	};
 
+	// Close previous device opened, if any
 	if ( m_device )
-		// Close previous device opened, if any
 		sane_close(m_device);
+
 	m_device = device;
 	m_device_info = device_info;
+	
+	SetImage(NULL);
 
 	return BuildControls();
 }
@@ -919,6 +935,7 @@ void ScannerWindow::RescanDevices()
 int32 ScannerWindow::DevicesRosterThread()
 {
 	BMenuItem *				item;
+	BMessage * 				msg;
 	SANE_Status				status;
 	const SANE_Device ** 	devices_list;
 	SANE_Handle				device;
@@ -936,7 +953,6 @@ int32 ScannerWindow::DevicesRosterThread()
 		for (i = 0; devices_list[i]; ++i)
 			{
 			BString 	label;
-			BMessage * 	msg;
 
 			
 			if (strcmp(devices_list[i]->vendor, "Noname") != 0)
@@ -971,9 +987,12 @@ int32 ScannerWindow::DevicesRosterThread()
 				item->SetEnabled(false);
 				
 			m_devices_menu->AddItem(item);
-			item->SetMarked(true);
-			PostMessage(msg);
 			};
+			
+			if (item && m_standalone) {
+				item->SetMarked(true);
+				PostMessage(msg);
+			}
 		};
 
 	return B_OK;
