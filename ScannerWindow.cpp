@@ -22,13 +22,12 @@
 #include "CollapsableBox.h"
 #include "ScannerOptionView.h"
 #include "ScannerInfoView.h"
+#include "SaneUtils.h"
 
 #include <BeBuild.h>
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "ScannerWindow"
-
-//#define HAVE_PRESET_MENUFIELD
 
 ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	: BWindow(frame, SOFTWARE_NAME, B_TITLED_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
@@ -178,10 +177,7 @@ bool ScannerWindow::QuitRequested()
 
 
 // --------------------------------------------------------------
-void ScannerWindow::MessageReceived
-	(
-	BMessage *	msg
-	) 
+void ScannerWindow::MessageReceived (BMessage *	msg)
 {
 	switch (msg->what)
 		{
@@ -284,9 +280,6 @@ void ScannerWindow::MessageReceived
 			
 			break;
 			}
-		case SET_DEVICE_MSG:
-			SetDevice(msg);
-			break;
 			
 		case SCAN_MSG: {
 			if ( ! m_device )
@@ -297,12 +290,19 @@ void ScannerWindow::MessageReceived
 				m_cancel_scan = true;
 				break;
 			};
-			
+
+			m_preview_view->SetImageFrame();
+
 			m_scan_thread_id = spawn_thread(_ScanThread, "scan", B_NORMAL_PRIORITY, this);
 			resume_thread(m_scan_thread_id);
 			break;
 		};	
 		
+		case SET_DEVICE_MSG:
+			SetDevice(msg);
+			PostMessage(FORMAT_CHANGED_MSG);
+			break;
+
 		case FORMAT_CHANGED_MSG: {
 			SANE_Status			status;
 			SANE_Parameters 	parm;
@@ -312,7 +312,6 @@ void ScannerWindow::MessageReceived
 
 		    status = sane_get_parameters(m_device, &parm);
 		    if (status == SANE_STATUS_GOOD) {
-				printf(	"format:          ");
 				switch (parm.format) {
 				case SANE_FRAME_GRAY:	printf("SANE_FRAME_GRAY\n");	break;
 				case SANE_FRAME_RGB:	printf("SANE_FRAME_RGB\n"); 	break;
@@ -323,29 +322,23 @@ void ScannerWindow::MessageReceived
 					printf("unknown (%d) frame format!\n", parm.format);
 				};
 
-				printf(	"last_frame:      %d\n"
-						"bytes_per_line:  %d\n"
-						"pixels_per_line: %d\n"
-						"lines:           %d\n"
-						"depth:           %d\n",
-					parm.last_frame, parm.bytes_per_line, parm.pixels_per_line,
-					parm.lines, parm.depth);
+				BRect geometry(0, 0, GetSaneMaxVal(m_device, "br-x"), GetSaneMaxVal(m_device, "br-y"));
+				BRect frame(GetSaneVal(m_device, "tl-x"), GetSaneVal(m_device, "tl-y"),
+						GetSaneVal(m_device, "br-x"), GetSaneVal(m_device, "br-y"));
 
-				BRect r(0, 0, parm.pixels_per_line, parm.lines);
-				m_preview_view->SetGeometry(r);
+				m_preview_view->SetGeometry(geometry);
+				m_preview_view->SetFrame(frame);
 		    } else
 			 	printf("sane_get_parameters: %s\n", sane_strstatus (status));
-
 			break;
 		};
 
 		case UPDATED_IMAGE_MSG: {
 			BRect	r;
-			
+
 			if ( msg->FindRect("updated_rect", &r) != B_OK )
 				break;
-				
-			// printf("UPDATED_IMAGE_MSG [%f, %f, %f, %f]\n", r.left, r.top, r.right, r.bottom);
+
 			m_preview_view->Invalidate();
 			break;
 		};
@@ -369,6 +362,28 @@ void ScannerWindow::MessageReceived
 			break;
 			};
 
+		case PARAM_CHANGED_MSG:
+			{
+				if (!m_device)
+					break;
+
+				BRect rect;
+				if ( msg->FindRect("rect", &rect) != B_OK )
+					break;
+
+				SetSaneVal(m_device, "tl-x", rect.left <= rect.right ? rect.left : rect.right);
+				SetSaneVal(m_device, "tl-y", rect.top <= rect.bottom ? rect.top : rect.bottom);
+				SetSaneVal(m_device, "br-x", rect.right >= rect.left ? rect.right : rect.left);
+				SetSaneVal(m_device, "br-y", rect.bottom >=rect.top ? rect.bottom : rect.top);
+
+				if (m_tl_x)m_tl_x->UpdateValue();
+				if (m_tl_y)m_tl_y->UpdateValue();
+				if (m_br_x)m_br_x->UpdateValue();
+				if (m_br_y)m_br_y->UpdateValue();
+
+				PostMessage(FORMAT_CHANGED_MSG);
+				break;
+			}
 		default:	
 			inherited::MessageReceived(msg);
 	}
@@ -434,11 +449,16 @@ status_t ScannerWindow::BuildControls()
 	BRect r;
 	PRINT(("Sanity:BuildControls()\n"));
 
+	m_tl_x = NULL;
+	m_tl_y = NULL;
+	m_br_x = NULL;
+	m_br_y = NULL;
+
 	if ( m_options_stack )
 		m_options_stack->RemoveSelf();
 	if (m_options_scroller)
 		m_options_scroller->RemoveSelf();
-				
+
 	r = m_panel->Bounds();
 	r.right	-= B_V_SCROLL_BAR_WIDTH + 32;
 
@@ -516,12 +536,17 @@ status_t ScannerWindow::BuildControls()
 
 			nb_advanced_opts = 0;
 		};
-					
+
 		ScannerOptionView * ov = new ScannerOptionView(ovr, desc->name, B_FOLLOW_TOP | B_FOLLOW_LEFT_RIGHT, 0,
 															m_device, opt);
 		ov->Hide();
 		AddChild(ov);
-					
+
+		if (strcmp(desc->name, "tl-x")==0)m_tl_x = ov;
+		if (strcmp(desc->name, "tl-y")==0)m_tl_y = ov;
+		if (strcmp(desc->name, "br-x")==0)m_br_x = ov;
+		if (strcmp(desc->name, "br-y")==0)m_br_y = ov;
+
 		if ( ov->Build() != B_OK ) {
 			ov->RemoveSelf();
 			delete ov;
@@ -533,15 +558,15 @@ status_t ScannerWindow::BuildControls()
 		box->AddChild(ov);
 		ov->MoveTo(6, box_height);
 		box_height = ov->Frame().bottom;
-							
+
 		if (desc->cap & SANE_CAP_ADVANCED)
 			nb_advanced_opts++;
-						
+
 		if (strlen(desc->desc))
 			ov->SetToolTip(desc->desc);
 
 	} 	// for every scanner options
-	
+
 	// add last group box
 	if (box) {
 		box->ResizeTo(r.Width(), box_height + 2);
@@ -568,7 +593,7 @@ status_t ScannerWindow::BuildControls()
 		title << m_device_info->model;
 
 	SetTitle(title.String());
-				
+
 	// m_options_scroller->MakeFocus();
 	m_options_stack->MakeFocus();
 	return B_OK;
@@ -600,9 +625,9 @@ int32 ScannerWindow::ScanThread()
 	}
 
 	Unlock();
-	
+
 	first_frame = true;
-	
+
 	m_cancel_scan = false;
 	do	{ //  for each frame...
 		// start frame reading
@@ -904,7 +929,7 @@ int32 ScannerWindow::DevicesRosterThread()
 	while ( (item = m_devices_menu->RemoveItem((int32)0)) != NULL)
 		delete item;
 
-	status = sane_get_devices(&devices_list, SANE_TRUE);
+	status = sane_get_devices(&devices_list, SANE_FALSE);
     if (status == SANE_STATUS_GOOD)
 		{
 		int	i;

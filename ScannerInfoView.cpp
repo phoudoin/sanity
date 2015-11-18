@@ -5,6 +5,7 @@
 #include <SupportKit.h>
 #include <TranslationKit.h>
 #include <Catalog.h>
+#include <IconUtils.h>
 
 #include <stdlib.h>
 #include <sane/sane.h>
@@ -127,11 +128,11 @@ void ScannerInfoView::InitIcon()
 		if (Resources.SetTo(&file) == B_OK) {
 			// Try to load an icon resource named after the option name...
 			size_t size;
-			const void *data = Resources.LoadResource('ICON', "device_info", &size);
+			const void *data = Resources.LoadResource(B_VECTOR_ICON_TYPE, "device_info", &size);
 			if (data) {
-				// Now build the bitmap
-				icon = new BBitmap(BRect(0, 0, 31, 31), B_CMAP8);
-				icon->SetBits(data, size, 0, B_CMAP8);
+				icon = new BBitmap(BRect(0, 0, 31, 31), B_RGBA32);
+				if (icon->InitCheck() == B_OK)
+					BIconUtils::GetVectorIcon((const uint8 *)data, size, icon);
 			}
 		}
 	}

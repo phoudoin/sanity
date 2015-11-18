@@ -10,6 +10,7 @@ class PreviewView;
 class BitmapView;
 class StackView;
 class TranslatorSavePanel;
+class ScannerOptionView;
 class BBox;
 class BMenuField;
 class BPopUpMenu;
@@ -28,7 +29,7 @@ public:
 		// Constructors, destructors, operators...
 		ScannerWindow(BRect Frame, BBitmap **outBitmap=NULL);
 		~ScannerWindow();
-							
+
 		typedef BWindow 		inherited;
 
 
@@ -42,7 +43,8 @@ public:
 			SCAN_MSG 			= 'scan',
 			UPDATED_IMAGE_MSG	= 'uimg',
 			FORMAT_CHANGED_MSG	= 'parc',
-			ACCEPT_MSG			= 'accp'			
+			ACCEPT_MSG			= 'accp',
+			PARAM_CHANGED_MSG	= 'prch'
 		};
 				
 		// Virtual function overrides
@@ -86,6 +88,11 @@ virtual	bool	QuitRequested(void);
 		BButton *				m_accept_button;
 		BScrollView *			m_options_scroller;
 		StackView *				m_options_stack;
+
+		ScannerOptionView *		m_tl_x;
+		ScannerOptionView *		m_tl_y;
+		ScannerOptionView *		m_br_x;
+		ScannerOptionView *		m_br_y;
 
 		TranslatorSavePanel *	m_save_panel;
 

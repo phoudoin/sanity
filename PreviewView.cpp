@@ -1,15 +1,21 @@
 #include "PreviewView.h"
 #include "CheckerBitmap.h"
+#include "ScannerWindow.h"
 
 
 PreviewView::PreviewView(BRect geometry)
 	: BView("PreviewView", B_WILL_DRAW | B_FRAME_EVENTS | B_FULL_UPDATE_ON_RESIZE)
 {
 	m_geometry 		= geometry;
+	m_frame			= geometry;
+	m_image_frame	= geometry;
+	m_mouse_button	= false;
 	
 	m_image 		= NULL;
 	m_background 	= new CheckerBitmap(12);
 	
+	m_move_cursor = new BCursor(B_CURSOR_ID_CROSS_HAIR);
+
 	SetViewColor(B_TRANSPARENT_COLOR);
 	m_background_color = ui_color(B_PANEL_BACKGROUND_COLOR);
 }
@@ -18,6 +24,7 @@ PreviewView::PreviewView(BRect geometry)
 PreviewView::~PreviewView()
 {
 	delete m_background;
+	delete m_move_cursor;
 }
 
 
@@ -30,6 +37,58 @@ void PreviewView::AttachedToWindow(void)
 
 void PreviewView::FrameResized(float width, float height)
 {
+}
+
+
+void PreviewView::MouseDown(BPoint p)
+{
+	BPoint point;
+	uint32 buttons;
+	GetMouse(&point, &buttons);
+	if ( buttons & B_PRIMARY_MOUSE_BUTTON ) {
+		m_mouse_point_1 = p;
+		m_mouse_button = true;
+		be_app->SetCursor(m_move_cursor, true);
+		SetMouseEventMask(B_POINTER_EVENTS,B_NO_POINTER_HISTORY);
+	}
+}
+
+
+void PreviewView::MouseUp(BPoint p)
+{
+	BPoint point;
+	uint32 buttons;
+	GetMouse(&point, &buttons);
+	if ( !buttons & B_PRIMARY_MOUSE_BUTTON ) {
+		m_mouse_button = false;
+		be_app->SetCursor(B_CURSOR_SYSTEM_DEFAULT, true);
+		if ( m_mouse_point_1 == p ) {
+			BMessage *msg = new BMessage(ScannerWindow::PARAM_CHANGED_MSG);
+			msg->AddRect("rect", m_geometry);
+			Window()->PostMessage(msg);
+		}
+	}
+}
+
+
+void PreviewView::MouseMoved(BPoint p, uint32 transit,const BMessage *message)
+{
+	if (m_mouse_button) {
+		BRect r = CenterImage();
+
+		float kx = r.Width() / m_geometry.Width();
+		float ky = r.Height() / m_geometry.Height();
+
+		BRect new_frame;
+		new_frame.left = (m_mouse_point_1.x - r.left) / kx;
+		new_frame.top = (m_mouse_point_1.y - r.top) / ky;
+		new_frame.right = (p.x - r.left) / kx;
+		new_frame.bottom = (p.y - r.top) / ky;
+
+		BMessage *msg = new BMessage(ScannerWindow::PARAM_CHANGED_MSG);
+		msg->AddRect("rect", new_frame);
+		Window()->PostMessage(msg);
+	}
 }
 
 
@@ -60,6 +119,7 @@ BRect PreviewView::CenterImage()
 	return rect;
 }
 
+
 void PreviewView::Draw(BRect invalid)
 {
 	SetDrawingMode(B_OP_ALPHA);
@@ -85,13 +145,47 @@ void PreviewView::Draw(BRect invalid)
 	StrokeRect(r);
 	r.InsetBy(1, 1);
 
+	float kx = r.Width() / m_geometry.Width();
+	float ky = r.Height() / m_geometry.Height();
+
+	float eps = 1.0 * (m_geometry.Width() / 100.0);
+	if ( !(fabs(m_frame.left - m_geometry.left) >= eps ||
+			fabs(m_frame.top - m_geometry.top) >= eps ||
+			fabs(m_frame.right - m_geometry.right) >= eps ||
+			fabs(m_frame.bottom - m_geometry.bottom) >= eps) ) {
+		m_frame = m_geometry;
+	}
+
+	SetHighColor(210, 210, 210, 255);
+	FillRect(r);
+
+	BRect rf(m_frame.left * kx, m_frame.top * ky, m_frame.right * kx, m_frame.bottom * ky);
+	rf.OffsetBy(r.left, r.top);
+
+	SetHighColor(255, 255, 255, 255);
+	FillRect(rf);
+
 	if (m_image) {
-		SetHighColor(255, 255, 255, 255);
-		FillRect(r);
-		DrawBitmap(m_image, m_image->Bounds(), r, B_FILTER_BITMAP_BILINEAR);
-	} else {
-		SetHighColor(255, 255, 255, 255);
-		FillRect(r);
+		BRect rif(m_image_frame.left * kx, m_image_frame.top * ky, m_image_frame.right * kx, m_image_frame.bottom * ky);
+		rif.OffsetBy(r.left, r.top);
+		DrawBitmap(m_image, m_image->Bounds(), rif, B_FILTER_BITMAP_BILINEAR);
+	}
+
+	if ( m_frame != m_geometry ) {
+		SetHighColor(200, 200, 200, 176);
+		FillRect(BRect(r.left, r.top, rf.left - 1, r.bottom));
+		FillRect(BRect(rf.right + 1, r.top, r.right, r.bottom));
+		FillRect(BRect(rf.left, r.top, rf.right, rf.top - 1));
+		FillRect(BRect(rf.left, rf.bottom + 1, rf.right, r.bottom));
+
+		SetHighColor(10, 40, 205, 196);
+		StrokeRect(rf);
+
+		float dotR = 3;
+		FillEllipse(BPoint(rf.left, rf.top), dotR, dotR);
+		FillEllipse(BPoint(rf.right - 1, rf.top), dotR, dotR);
+		FillEllipse(BPoint(rf.left, rf.bottom - 1), dotR, dotR);
+		FillEllipse(BPoint(rf.right - 1, rf.bottom - 1), dotR, dotR);
 	}
 }
 
@@ -113,8 +207,25 @@ void PreviewView::SetGeometry(BRect geometry)
 {
 	if (geometry == m_geometry)
 		return;
-	
+
 	m_geometry = geometry;
+	Invalidate();
+}
+
+
+void PreviewView::SetFrame(BRect frame)
+{
+	if (frame == m_frame)
+		return;
+
+	m_frame = frame;
+	Invalidate();
+}
+
+
+void PreviewView::SetImageFrame(void)
+{
+	m_image_frame = m_frame;
 	Invalidate();
 }
 

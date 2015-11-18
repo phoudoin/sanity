@@ -33,6 +33,7 @@ SRCS = \
 	 CollapsableBox.cpp  \
 	 PreviewView.cpp  \
 	 SANETranslator.cpp  \
+	 SaneUtils.cpp  \
 	 Sanity.cpp  \
 	 ScannerInfoView.cpp  \
 	 ScannerOptionView.cpp  \
@@ -40,7 +41,8 @@ SRCS = \
 	 SpinButton.cpp  \
 	 SpinControl.cpp  \
 	 StackView.cpp  \
-	 TranslatorSavePanel.cpp
+	 TranslatorSavePanel.cpp  \
+
 
 #	Specify the resource definition files to use. Full or relative paths can be
 #	used.
@@ -55,6 +57,8 @@ RSRCS = \
 
 # End Pe/Eddie support.
 # @<-src@ 
+#%}
+
 #%}
 
 #%}
@@ -92,7 +96,7 @@ LOCAL_INCLUDE_PATHS =
 
 #	Specify the level of optimization that you want. Specify either NONE (O0),
 #	SOME (O1), FULL (O2), or leave blank (for the default optimization level).
-OPTIMIZE := 
+OPTIMIZE := O2
 
 # 	Specify the codes for languages you are going to support in this
 # 	application. The default "en" one must be provided too. "make catkeys"
@@ -114,11 +118,11 @@ WARNINGS =
 
 #	With image symbols, stack crawls in the debugger are meaningful.
 #	If set to "TRUE", symbols will be created.
-SYMBOLS := 
+SYMBOLS :=
 
 #	Includes debug information, which allows the binary to be debugged easily.
 #	If set to "TRUE", debug info will be created.
-DEBUGGER := 
+DEBUGGER :=
 
 #	Specify any additional compiler flags to be used.
 COMPILER_FLAGS = 
