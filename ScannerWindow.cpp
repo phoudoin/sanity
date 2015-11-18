@@ -506,7 +506,7 @@ status_t ScannerWindow::BuildControls()
 				m_preview_resolution = 300;
 				int cnt = desc->constraint.word_list[0];
 				for (int i = 1; i <= cnt && desc->constraint.word_list[i]; i++) {
-					if ( desc->constraint.word_list[i] < min )
+					if ( desc->constraint.word_list[i] < m_preview_resolution )
 						m_preview_resolution = desc->constraint.word_list[i];
 				}
 		}
