@@ -68,7 +68,7 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 		menu_bar->Hide();
 	
 	// Add a scan panel
-	m_panel = new BBox("panel", B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE_JUMP, B_NO_BORDER);
+	m_panel = new BBox("panel", B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE_JUMP, B_PLAIN_BORDER);
 
 	m_preview_view = new PreviewView(BRect(0, 0, 2100, 2970));
 
@@ -102,9 +102,13 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 		m_save_as_button->Hide();
 	}
 
+	m_preview_button = new BButton("Preview", B_TRANSLATE(PREVIEW_LABEL), new BMessage(PREVIEW_MSG),
+								B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
+	m_preview_button->SetToolTip(B_TRANSLATE("Start the scan process for preview"));
+	m_preview_button->MakeDefault(true);
+
 	m_scan_button = new BButton("Scan", B_TRANSLATE(SCAN_LABEL), new BMessage(SCAN_MSG),
 								B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE);
-	m_scan_button->MakeDefault(true);
 	m_scan_button->SetToolTip(B_TRANSLATE("Start the scan process"));
 	
 	m_close_button = new BButton("Close", B_TRANSLATE("Close"), new BMessage(B_QUIT_REQUESTED),
@@ -133,10 +137,10 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 					.SetInsets(0, B_USE_DEFAULT_SPACING, 0, 0)
 					.SetExplicitAlignment(BAlignment(B_ALIGN_CENTER, B_ALIGN_BOTTOM))
 					.AddGlue()
+					.Add(m_preview_button)
 					.Add(m_scan_button)
 					.Add(m_accept_button)
 					.Add(m_save_as_button)
-					.Add(m_close_button)
 					.AddGlue()
 				.End()				
 			.End()
@@ -291,8 +295,36 @@ void ScannerWindow::MessageReceived (BMessage *	msg)
 				break;
 			};
 
+			m_preview_mode = false;
+
 			SetImage(NULL);
 			m_preview_view->SetImageFrame();
+
+			m_scan_thread_id = spawn_thread(_ScanThread, "scan", B_NORMAL_PRIORITY, this);
+			resume_thread(m_scan_thread_id);
+			break;
+		};
+
+		case PREVIEW_MSG: {
+			if ( ! m_device )
+				break;
+
+			if ( m_scan_thread_id != -1 ) {
+				// already launched...
+				m_cancel_scan = true;
+				break;
+			};
+
+			m_preview_mode = true;
+
+			SetImage(NULL);
+
+			m_preview_view->SetFrame(m_preview_view->GetGeometry());
+			m_preview_view->SetImageFrame();
+
+			BMessage *msg = new BMessage(ScannerWindow::PARAM_CHANGED_MSG);
+			msg->AddRect("rect", m_preview_view->GetGeometry());
+			PostMessage(msg);
 
 			m_scan_thread_id = spawn_thread(_ScanThread, "scan", B_NORMAL_PRIORITY, this);
 			resume_thread(m_scan_thread_id);
@@ -301,6 +333,10 @@ void ScannerWindow::MessageReceived (BMessage *	msg)
 		
 		case SET_DEVICE_MSG:
 			SetDevice(msg);
+			m_preview_button->MakeDefault(true);
+			if (m_standalone && m_save_as_button->IsEnabled()) {
+				m_save_as_button->SetEnabled(false);
+			}
 			PostMessage(FORMAT_CHANGED_MSG);
 			break;
 
@@ -327,9 +363,12 @@ void ScannerWindow::MessageReceived (BMessage *	msg)
 				BRect frame = geometry;
 
 				if ( m_tl_x != NULL && m_tl_y != NULL && m_br_x != NULL && m_br_y != NULL) {
-					geometry.Set(0, 0, GetSaneMaxVal(m_device, "br-x"), GetSaneMaxVal(m_device, "br-y"));
-					frame.Set(GetSaneVal(m_device, "tl-x"), GetSaneVal(m_device, "tl-y"),
-						GetSaneVal(m_device, "br-x"), GetSaneVal(m_device, "br-y"));
+					geometry.Set(0, 0, GetSaneMaxFloat(m_device, SANE_NAME_SCAN_BR_X),
+						GetSaneMaxFloat(m_device, SANE_NAME_SCAN_BR_Y));
+					frame.Set(GetSaneFloat(m_device, SANE_NAME_SCAN_TL_X),
+						GetSaneFloat(m_device, SANE_NAME_SCAN_TL_Y),
+						GetSaneFloat(m_device, SANE_NAME_SCAN_BR_X),
+						GetSaneFloat(m_device, SANE_NAME_SCAN_BR_Y));
 				}
 
 				m_preview_view->SetGeometry(geometry);
@@ -348,7 +387,7 @@ void ScannerWindow::MessageReceived (BMessage *	msg)
 			m_preview_view->Invalidate();
 			break;
 		};
-			
+
 		case ACCEPT_MSG:
 			{
 			if ( ! m_image )
@@ -378,19 +417,19 @@ void ScannerWindow::MessageReceived (BMessage *	msg)
 					break;
 
 				if (m_tl_x) {
-					SetSaneVal(m_device, "tl-x", rect.left <= rect.right ? rect.left : rect.right);
+					SetSaneFloat(m_device, SANE_NAME_SCAN_TL_X, rect.left <= rect.right ? rect.left : rect.right);
 					m_tl_x->UpdateValue();
 				}
 				if (m_tl_y) {
-					SetSaneVal(m_device, "tl-y", rect.top <= rect.bottom ? rect.top : rect.bottom);
+					SetSaneFloat(m_device, SANE_NAME_SCAN_TL_Y, rect.top <= rect.bottom ? rect.top : rect.bottom);
 					m_tl_y->UpdateValue();
 				}
 				if (m_br_x) {
-					SetSaneVal(m_device, "br-x", rect.right >= rect.left ? rect.right : rect.left);
+					SetSaneFloat(m_device, SANE_NAME_SCAN_BR_X, rect.right >= rect.left ? rect.right : rect.left);
 					m_br_x->UpdateValue();
 				}
 				if (m_br_y) {
-					SetSaneVal(m_device, "br-y", rect.bottom >=rect.top ? rect.bottom : rect.top);
+					SetSaneFloat(m_device, SANE_NAME_SCAN_BR_Y, rect.bottom >=rect.top ? rect.bottom : rect.top);
 					m_br_y->UpdateValue();
 				}
 
@@ -494,7 +533,7 @@ status_t ScannerWindow::BuildControls()
 										B_FOLLOW_ALL_SIDES,
 										B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE_JUMP,
 										false, true,	// vertical scrollbar
-										B_NO_BORDER);	// B_FANCY_BORDER);
+										B_PLAIN_BORDER);	// B_FANCY_BORDER);
 	m_panel->AddChild(m_options_scroller);
 
 	// printf("Options for device %s:\n", m_device_info->name);
@@ -644,6 +683,7 @@ int32 ScannerWindow::ScanThread()
 	SANE_Parameters 	parm;
 	BBitmap *			image = NULL;
 	bool				first_frame;
+	SANE_Int			scan_resolution;
 
 	if (!m_device)
 		return B_ERROR;
@@ -651,8 +691,17 @@ int32 ScannerWindow::ScanThread()
 	Lock();
 
 	rgb_color default_color = m_status_bar->BarColor();
-	m_scan_button->SetLabel(B_TRANSLATE( "Cancel"));
+
+	if (m_preview_mode) {
+		m_preview_button->SetLabel(B_TRANSLATE( "Cancel"));
+		m_scan_button->SetEnabled(false);
+	} else {
+		m_scan_button->SetLabel(B_TRANSLATE( "Cancel"));
+		m_preview_button->SetEnabled(false);
+	}
+
 	m_status_bar->Reset();
+
 	if (!m_standalone && m_accept_button->IsEnabled()) {
 		m_accept_button->SetEnabled(false);
 	}
@@ -662,6 +711,11 @@ int32 ScannerWindow::ScanThread()
 
 	Unlock();
 
+	if (m_preview_mode) {
+		scan_resolution = GetSaneInt(m_device, SANE_NAME_SCAN_RESOLUTION);
+		SetSaneInt(m_device, SANE_NAME_SCAN_RESOLUTION, m_preview_resolution);
+	}
+
 	first_frame = true;
 
 	m_cancel_scan = false;
@@ -669,38 +723,38 @@ int32 ScannerWindow::ScanThread()
 		// start frame reading
 		if ( m_cancel_scan )
 			break;
-		
+
 		status = sane_start(m_device);
 		if ( status != SANE_STATUS_GOOD ) {
 		 	fprintf (stderr, "sane_start: %s\n", sane_strstatus (status));
 			break;
 		};
-	
+
 		// get frame parameters
 	    status = sane_get_parameters(m_device, &parm);
 	    if (status != SANE_STATUS_GOOD)	{
 		 	fprintf (stderr, "sane_get_parameters: %s\n", sane_strstatus (status));
 			break;
 		};
-			
+
 		if (parm.lines >= 0) {
 			float total_bytes = parm.bytes_per_line * parm.lines;
 			if (parm.format != SANE_FRAME_GRAY && parm.format != SANE_FRAME_RGB)
 				total_bytes *= 3.0;
-			
+
 			Lock();
 			m_status_bar->SetMaxValue(total_bytes);
 			Unlock();
-	
+
 			fprintf (stderr, "scanning image of size %dx%d pixels at "
 	 				"%d bits/pixel\n",
 	 				parm.pixels_per_line, parm.lines,
 	 				8 * parm.bytes_per_line / parm.pixels_per_line);
-				
+
 			if (first_frame) {
 				image = new BBitmap(BRect(0, 0, parm.pixels_per_line - 1, parm.lines - 1),
 						((parm.depth == 1) ? B_GRAY1 : B_RGBA32));
-				
+
 				if (! image) {
 					BAlert * alert = new BAlert("BBitmap", B_TRANSLATE("Failed to create image buffer"), B_TRANSLATE("Glup."));
 					alert->Go();
@@ -708,21 +762,21 @@ int32 ScannerWindow::ScanThread()
 				};
 				// TODO: fill image with transparent background (B_TRANSPARENT_COLOR or alpha = 0)
 			};
-			
+
 		} else {
 			fprintf (stderr, "scanning image %d pixels wide and "
 					 "variable height at %d bits/pixel\n",
 			 		parm.pixels_per_line, 8 * parm.bytes_per_line / parm.pixels_per_line);
-		
+
 			BAlert * alert = new BAlert("Well...", B_TRANSLATE("Variable height scanning not supported (yet?)"), B_TRANSLATE("Sorry"));
 			alert->Go();
 			break;
 		};
-		
+
 		Lock();
 		PostMessage(FORMAT_CHANGED_MSG);
 		Unlock();
-	
+
 		uint8 * buffer, * data;
 		uint8 * 	ptr;
 		int32		x, y;
@@ -733,10 +787,10 @@ int32 ScannerWindow::ScanThread()
 		rgb_color	green_color	= { 0, 255, 0, 255 };
 		rgb_color	blue_color	= { 0, 0, 255, 255 };
 		BRect		updated_rect;
-			
+
 		x = y = 0;
 		channel = 0;
-		
+
 		updated_rect.Set(0, 0, parm.pixels_per_line, 0);
 
 		Lock();
@@ -759,21 +813,21 @@ int32 ScannerWindow::ScanThread()
 			break;
 		};
 		Unlock();								
-			
+
 		buffer = (uint8 *) malloc(parm.bytes_per_line);
-	
+
 		line_len = 0;
 		padding_bytes = 0;
-	
+
 		while (1) { // read until end of frame or error
 			if ( m_cancel_scan )
 				break;
-			
+
 			len = 0;
 			status = sane_read(m_device, buffer, parm.bytes_per_line, &len);
 			if (status == SANE_STATUS_EOF)
 				break;
-				
+
 			if (status != SANE_STATUS_GOOD) {
 				fprintf (stderr, "sane_read: %s\n", sane_strstatus (status));
 
@@ -781,18 +835,18 @@ int32 ScannerWindow::ScanThread()
 				alert->Go();
 				break;
 			};
-					
+
 			Lock();
 			m_status_bar->Update((float) len);
 			SetImage(image);
 			Unlock();
-	
+
 			image->LockBits();
-					
+
 			ptr = (uint8 *) image->Bits();
 			ptr += (y * image->BytesPerRow());
 			ptr += (4*x);
-	
+
 			data = buffer;
 			while ( len > 0 ) {
 				if (padding_bytes) {
@@ -802,13 +856,13 @@ int32 ScannerWindow::ScanThread()
 					len--;
 					continue;
 				};
-					
+
 		      	switch (parm.format) {
 				case SANE_FRAME_RED:
 				case SANE_FRAME_GREEN:
 				case SANE_FRAME_BLUE: {
 					uint8	value;
-	
+
 					if (parm.depth == 16) {
 						value = (*((uint16 *) data)) >> 8;
 						data += 2;
@@ -820,12 +874,12 @@ int32 ScannerWindow::ScanThread()
 						len--;
 						line_len++;
 					};
-	
+
 					*(ptr + channel) = value;
 					*(ptr + 3)		= 255;	// Alpha channel
 					break;
 				};
-							
+
 				case SANE_FRAME_RGB: {
 					uint8 red, green, blue;
 							
@@ -845,24 +899,24 @@ int32 ScannerWindow::ScanThread()
 						len -= 3;
 						line_len += 3;
 					};
-	
+
 					*ptr 		= blue;
 					*(ptr+1) 	= green;
 					*(ptr+2) 	= red;	// red channel
 					*(ptr+3) 	= 255;		// Alpha channel
 					break;
 				};
-							
+
 				case SANE_FRAME_GRAY: {
 					uint8	value = 0;
-							
+
 					if (parm.depth == 1 ) {
 						*ptr = *((uint8 *) data++);
 						len--;
 						line_len++;
 						break;
 					};
-							
+
 					if (parm.depth == 16) {
 						value = (*((uint16 *) data)) >> 8;
 						data += 2;
@@ -880,7 +934,7 @@ int32 ScannerWindow::ScanThread()
 					break;
 				};
 				};
-						
+
 				// Next pixel;		
 				x	+= ((parm.depth == 1) ? 8 : 1);
 				ptr += ((image->ColorSpace() == B_GRAY1) ? 1 : 4);
@@ -890,7 +944,7 @@ int32 ScannerWindow::ScanThread()
 					if ( y >= parm.lines )
 						break;
 					x = 0;
-						
+
 					padding_bytes = parm.bytes_per_line - line_len;
 					line_len = 0;
 
@@ -900,29 +954,42 @@ int32 ScannerWindow::ScanThread()
 				};
 			};
 			image->UnlockBits();
-	
+
 			BMessage * msg = new BMessage(UPDATED_IMAGE_MSG);
 			updated_rect.bottom = y;
 			msg->AddRect("updated_rect", updated_rect);
-	
+
 			Lock();
 			PostMessage(msg);
 			Unlock();
-				
+
 			delete msg;
-				
+
 			updated_rect.top = y;
 		};	// while sane_read()
-				
+
 		free(buffer);
 		first_frame = false;
 
 	} while ( ! parm.last_frame && status == SANE_STATUS_EOF );
-	
+
 	sane_cancel(m_device);
-	
+
 	Lock();
-	m_scan_button->SetLabel(B_TRANSLATE("Scan"));
+
+	if (m_preview_mode) {
+		SetSaneInt(m_device, SANE_NAME_SCAN_RESOLUTION, scan_resolution);
+	}
+
+	if (m_preview_mode) {
+		m_preview_button->SetLabel(B_TRANSLATE("Preview"));
+		m_scan_button->SetEnabled(true);
+		m_scan_button->MakeDefault(true);
+	} else {
+		m_scan_button->SetLabel(B_TRANSLATE("Scan"));
+		m_preview_button->SetEnabled(true);
+	}
+
 	m_status_bar->Reset();
 	m_status_bar->SetBarColor(default_color);
 

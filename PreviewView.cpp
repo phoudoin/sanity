@@ -223,6 +223,18 @@ void PreviewView::SetFrame(BRect frame)
 }
 
 
+BRect PreviewView::GetGeometry(void)
+{
+	return m_geometry;
+}
+
+
+BRect PreviewView::GetFrame(void)
+{
+	return m_frame;
+}
+
+
 void PreviewView::SetImageFrame(void)
 {
 	m_image_frame = m_frame;

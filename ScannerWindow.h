@@ -20,6 +20,7 @@ class BButton;
 class BScrollView;
 
 #define SCAN_LABEL		"Scan"
+#define PREVIEW_LABEL	"Preview"
 #define PRESET_LABEL	"Preset:"
 #define DEVICE_LABEL	"Device:"
 
@@ -45,7 +46,8 @@ public:
 			UPDATED_IMAGE_MSG	= 'uimg',
 			FORMAT_CHANGED_MSG	= 'parc',
 			ACCEPT_MSG			= 'accp',
-			PARAM_CHANGED_MSG	= 'prch'
+			PARAM_CHANGED_MSG	= 'prch',
+			PREVIEW_MSG 		= 'prev'
 		};
 				
 		// Virtual function overrides
@@ -75,6 +77,8 @@ virtual	bool	QuitRequested(void);
 		SANE_Handle				m_device;
 		const SANE_Device *		m_device_info;
 
+		bool					m_preview_mode;
+
 		BBox *					m_panel;
 		BRect 					m_options_rect;
 		PreviewView *			m_preview_view;
@@ -84,6 +88,7 @@ virtual	bool	QuitRequested(void);
 		BPopUpMenu * 			m_devices_menu;
 		BStatusBar *			m_status_bar;
 		BButton *				m_scan_button;
+		BButton *				m_preview_button;
 		BButton *				m_save_as_button;
 		BButton *				m_close_button;
 		BButton *				m_accept_button;

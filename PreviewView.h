@@ -33,6 +33,9 @@ class PreviewView : public BView
 		void			SetFrame(BRect frame);
 		void			SetImageFrame(void);
 
+		BRect			GetGeometry(void);
+		BRect			GetFrame(void);
+
 		// From here, it's none of your business! ;-)
 	private:
 		BRect		CenterImage();
