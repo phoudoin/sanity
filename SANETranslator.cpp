@@ -187,7 +187,6 @@ Translate(	/*	required	*/
 	BRect window_rect(50, 50, 780, 580);
 	BBitmap *outBitmap = NULL;
 	window = new ScannerWindow(window_rect, &outBitmap);
-	window->Show();
 	if (sane_device.Length()) {
 		status_t ret;
 		/* wait for the scanner list to be built before selecting one of them */
@@ -198,6 +197,7 @@ Translate(	/*	required	*/
 		setDevMsg.AddString("device", sane_device.String());
 		msgr.SendMessage(&setDevMsg);
 	}
+	window->Show();
 	
 	status_t wret = -1;
 	thread_id wth = window->Thread();

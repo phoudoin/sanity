@@ -2,6 +2,7 @@
 #define SCANNERWINDOW_H
 
 #include <Window.h>
+#include <Notification.h>
 
 #include <sane/sane.h>
 #include <sane/saneopts.h>
@@ -70,6 +71,8 @@ virtual	bool	QuitRequested(void);
 		void					RescanDevices();
 		int32					ScanThread();
 
+		void					SendNotify(const char *title, const char *text, int sec = 4);
+
 		static	int32			_DevicesRosterThread(void * p) { return ((ScannerWindow *) p)->DevicesRosterThread(); }
 		thread_id				m_devices_roster_thread_id;
 
@@ -87,6 +90,7 @@ virtual	bool	QuitRequested(void);
 		PreviewView *			m_preview_view;
 		BitmapView *			m_bitmap_view;
 		BBitmap *				m_image;
+		BBitmap *				m_icon;
 		BPopUpMenu * 			m_preset_menu;
 		BPopUpMenu * 			m_devices_menu;
 		BStatusBar *			m_status_bar;

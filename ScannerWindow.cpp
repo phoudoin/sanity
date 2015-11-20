@@ -12,6 +12,7 @@
 #include <TranslationKit.h>
 #include <Window.h>
 #include <Catalog.h>
+#include <IconUtils.h>
 
 #include "Sanity.h"
 #include "ScannerWindow.h"
@@ -39,6 +40,7 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 	BMenuItem *		item;
 	BMenuField *	menu_field;
 	
+	m_icon = NULL;
 	m_image = NULL;
 	m_save_panel = NULL;
 	
@@ -127,6 +129,16 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 
 	m_status_bar = new BStatusBar("StatusBar");
 	m_status_bar->SetFlags(m_status_bar->Flags() | (B_WILL_DRAW | B_FRAME_EVENTS));
+	
+	char app_path[B_PATH_NAME_LENGTH + 1];
+	if (GetBinaryPath(app_path, (void*)GetBinaryPath) == B_OK) {
+		BNode node(app_path);
+		m_icon = new BBitmap(BRect(0, 0, 31, 31), B_RGBA32);
+		if (BIconUtils::GetVectorIcon(&node, "BEOS:ICON", m_icon) != B_OK) {
+			delete m_icon;
+			m_icon = NULL;
+		}
+	}
 	
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 		.SetInsets(0, 0, 0, 0)
@@ -488,7 +500,19 @@ status_t ScannerWindow::SetDevice(BMessage *msg)
 
 	if ( msg->FindPointer("device", (void **) &device_info) != B_OK )
 		return B_BAD_VALUE;
-	printf("Sanity:SetDevice(%s)\n", device_info->name);
+
+	BString text;
+
+	if (device_info) {
+		if (device_info->vendor && strcmp("Noname", device_info->vendor) != 0)
+			text << device_info->vendor << " ";
+		if (device_info->model)
+			text << device_info->model << " ";
+		if (device_info->name)
+			text << B_TRANSLATE(" (") << device_info->name << ")";
+	}
+
+	SendNotify(BString("Initialize"), text);
 
 	// Close previous device opened, if any
 	if ( m_device )
@@ -1034,6 +1058,20 @@ void ScannerWindow::RescanDevices()
 	resume_thread(m_devices_roster_thread_id);
 }
 
+
+void ScannerWindow::SendNotify(const char *title, const char *text, int sec)
+{
+	BNotification notify(B_INFORMATION_NOTIFICATION);
+	notify.SetGroup(BString("Sanity"));
+	notify.SetTitle(BString(title));
+	notify.SetContent(BString(text));
+	notify.SetMessageID(BString("Sanity"));
+	if (m_icon != NULL)
+		notify.SetIcon(m_icon);
+	notify.Send(sec * 1000000);
+}
+
+
 // --------------------------------------------------------------
 int32 ScannerWindow::DevicesRosterThread()
 {
@@ -1044,7 +1082,10 @@ int32 ScannerWindow::DevicesRosterThread()
 	SANE_Handle				device;
 
 	// Ugly hack
+	SendNotify(BString(B_TRANSLATE("Device")), B_TRANSLATE("Force scanner detection"));
 	system("scanimage -L");
+	
+	SendNotify(BString(B_TRANSLATE("Device")), B_TRANSLATE("Scanner detection"));
 
 	while ( (item = m_devices_menu->RemoveItem((int32)0)) != NULL)
 		delete item;
@@ -1061,8 +1102,6 @@ int32 ScannerWindow::DevicesRosterThread()
 			  label << devices_list[i]->vendor << " ";
 			if (devices_list[i]->model)
 				label << devices_list[i]->model;
-//			if (devices_list[i]->name)
-//				label << devices_list[i]->name;
 
 			msg = new BMessage(SET_DEVICE_MSG);
 			msg->AddPointer("device", devices_list[i]); 
@@ -1090,10 +1129,11 @@ int32 ScannerWindow::DevicesRosterThread()
 				
 			m_devices_menu->AddItem(item);
 			};
-			
-			if (item && m_standalone) {
-				//item->SetMarked(true);
-				//PostMessage(msg);
+
+			if (devices_list[0] != NULL) {
+				BMessage setDevMsg(ScannerWindow::SET_DEVICE_BY_NAME_MSG);
+				setDevMsg.AddString("device", devices_list[0]->name);
+				PostMessage(&setDevMsg);
 			}
 		};
 
