@@ -58,6 +58,9 @@ Application::Application()
 
 	BRect window_rect(50, 50, 780, 580);
 	m_window = new ScannerWindow(window_rect);
+	
+	// TODO: add settings for opening last scanner by default
+	m_device.SetTo("");
 }
 
 
@@ -72,7 +75,22 @@ Application::~Application()
 // -------------------------------------------------
 void Application::ReadyToRun( void )
 {
+	OpenSaneWrapper(m_device);
 	m_window->Show();
+}
+
+
+// -------------------------------------------------
+void Application::OpenSaneWrapper(BString dev)
+{
+	if (dev.Length() > 0) {
+		status_t ret;
+		wait_for_thread(m_window->DevicesRosterThreadID(), &ret);
+		BMessenger msgr(m_window);
+		BMessage setDevMsg(ScannerWindow::SET_DEVICE_BY_NAME_MSG);
+		setDevMsg.AddString("device", dev.String());
+		msgr.SendMessage(&setDevMsg);
+	}
 }
 
 	
@@ -105,16 +123,9 @@ void Application::RefsReceived( BMessage * msg )
 					return;
 				if (strcmp(fmime, SANE_MIMETYPE))
 					return;
-				BString device;
-				file.ReadAttrString("sane-device", &device);
-				if (device.Length() > 0) {
-					status_t ret;
-					wait_for_thread(m_window->DevicesRosterThreadID(), &ret);
-					BMessenger msgr(m_window);
-					BMessage setDevMsg(ScannerWindow::SET_DEVICE_BY_NAME_MSG);
-					setDevMsg.AddString("device", device.String());
-					msgr.SendMessage(&setDevMsg);
-				}
+				file.ReadAttrString("sane-device", &m_device);
+				if (!m_window->IsHidden())
+					OpenSaneWrapper(m_device);
    			}
    		}
    		return;

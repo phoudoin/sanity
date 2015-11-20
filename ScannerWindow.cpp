@@ -34,7 +34,8 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 			B_AUTO_UPDATE_SIZE_LIMITS | B_ASYNCHRONOUS_CONTROLS)
 {
 	BMenuBar *		menu_bar;
-	BMenu *			menu;
+	BMenu *			file_menu;
+	BMenu *			opt_menu;
 	BMenuItem *		item;
 	BMenuField *	menu_field;
 	
@@ -46,23 +47,32 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 		
 	menu_bar = new BMenuBar("menu_bar");
 		
-	menu = new BMenu(B_TRANSLATE("File"));
+	file_menu = new BMenu(B_TRANSLATE("File"));
 	
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Save as" B_UTF8_ELLIPSIS), new BMessage(SAVE_AS_MSG)));
+	file_menu->AddItem(new BMenuItem(B_TRANSLATE("Save as" B_UTF8_ELLIPSIS), new BMessage(SAVE_AS_MSG)));
 
-	menu->AddSeparatorItem();
+	file_menu->AddSeparatorItem();
 
 	item = new BMenuItem(B_TRANSLATE("About"), new BMessage(B_ABOUT_REQUESTED));
 	item->SetTarget(be_app);
-	menu->AddItem(item);
+	file_menu->AddItem(item);
 
-	menu->AddSeparatorItem();
+	file_menu->AddSeparatorItem();
 
 	item = new BMenuItem(B_TRANSLATE("Quit"), new BMessage(B_QUIT_REQUESTED), 'Q');
 	item->SetTarget(be_app);
-	menu->AddItem(item);
+	file_menu->AddItem(item);
 
-	menu_bar->AddItem(menu);
+	opt_menu = new BMenu(B_TRANSLATE("Options"));
+	opt_menu->AddItem(new BMenuItem(B_TRANSLATE("Create device-wrapper files"), new BMessage(CREATE_DEV_MSG)));
+	opt_menu->AddItem(new BMenuItem(B_TRANSLATE("Choose wrapper directory" B_UTF8_ELLIPSIS) , new BMessage(CHDIR_DEV_MSG)));
+
+	opt_menu->AddSeparatorItem();
+
+	opt_menu->AddItem(new BMenuItem(B_TRANSLATE("Force device detection"), new BMessage(FORCE_DEV_MSG)));
+
+	menu_bar->AddItem(file_menu);
+	menu_bar->AddItem(opt_menu);
 	
 	if (!m_standalone)
 		menu_bar->Hide();
@@ -1034,7 +1044,7 @@ int32 ScannerWindow::DevicesRosterThread()
 	SANE_Handle				device;
 
 	// Ugly hack
-	//system("scanimage -L");
+	system("scanimage -L");
 
 	while ( (item = m_devices_menu->RemoveItem((int32)0)) != NULL)
 		delete item;

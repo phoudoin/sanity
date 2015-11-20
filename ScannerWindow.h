@@ -47,7 +47,10 @@ public:
 			FORMAT_CHANGED_MSG	= 'parc',
 			ACCEPT_MSG			= 'accp',
 			PARAM_CHANGED_MSG	= 'prch',
-			PREVIEW_MSG 		= 'prev'
+			PREVIEW_MSG 		= 'prev',
+			CREATE_DEV_MSG		= 'crdv',
+			CHDIR_DEV_MSG		= 'cddv',
+			FORCE_DEV_MSG		= 'frdv'
 		};
 				
 		// Virtual function overrides

@@ -36,7 +36,10 @@ class Application : public BApplication
 		
 		// From here, it's none of your business! ;-)
 	private:
+				void	OpenSaneWrapper(BString dev);
+
 		ScannerWindow *	m_window;
+		BString			m_device;
 };
 
 // open a BFile to the binary which code is pointed to by ptr 
