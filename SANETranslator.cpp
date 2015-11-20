@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "Sanity.h"
 #include "ScannerWindow.h"
 
 #if DEBUG
@@ -48,8 +49,6 @@ extern const char * STR_ABOUT_TEXT;
 /*	yT reserves all codes with non-lowecase letters in them.	*/
 /*	Sanity is a frontend for SANE...	*/
 #define SANE_TYPE 'SANE'
-
-#define SANE_MIMETYPE "image/x-vnd.sane-scanner-wrapper"
 #define SANE_PRETTY "Scanner Device"
 
 

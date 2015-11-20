@@ -4,9 +4,12 @@
 #include <Application.h>
 #include <Window.h>
 
+#include "ScannerWindow.h"
+
 #define SOFTWARE_EDITOR			"prds"
 #define SOFTWARE_NAME			"Sanity"
 #define SOFTWARE_VERSION_LABEL	"0.6"
+#define SANE_MIMETYPE 			"image/x-vnd.sane-scanner-wrapper"
 
 class Application : public BApplication 
 {
@@ -33,8 +36,7 @@ class Application : public BApplication
 		
 		// From here, it's none of your business! ;-)
 	private:
-		BRect	window_rect;
-		int		windows_count;
+		ScannerWindow *	m_window;
 };
 
 // open a BFile to the binary which code is pointed to by ptr 

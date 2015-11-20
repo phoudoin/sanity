@@ -142,9 +142,10 @@ ScannerWindow::ScannerWindow(BRect frame, BBitmap **outBitmap)
 					.Add(m_accept_button)
 					.Add(m_save_as_button)
 					.AddGlue()
-				.End()				
+				.End()								
 			.End()
-		.End();
+		.End()
+	.End();
 
 	m_options_stack = NULL;
 	m_options_scroller = NULL;
@@ -175,7 +176,12 @@ ScannerWindow::~ScannerWindow()
 // --------------------------------------------------------------
 bool ScannerWindow::QuitRequested()
 {
-	be_app->PostMessage(Application::WINDOW_CLOSED_MSG);
+	if (m_standalone)
+		be_app->PostMessage(B_QUIT_REQUESTED);
+	else {
+		Lock();
+		Quit();
+	}
 	return true;
 }
 
@@ -1028,7 +1034,7 @@ int32 ScannerWindow::DevicesRosterThread()
 	SANE_Handle				device;
 
 	// Ugly hack
-	system("scanimage -L");
+	//system("scanimage -L");
 
 	while ( (item = m_devices_menu->RemoveItem((int32)0)) != NULL)
 		delete item;
@@ -1041,7 +1047,6 @@ int32 ScannerWindow::DevicesRosterThread()
 			{
 			BString 	label;
 
-			
 			if (strcmp(devices_list[i]->vendor, "Noname") != 0)
 			  label << devices_list[i]->vendor << " ";
 			if (devices_list[i]->model)
@@ -1077,8 +1082,8 @@ int32 ScannerWindow::DevicesRosterThread()
 			};
 			
 			if (item && m_standalone) {
-				item->SetMarked(true);
-				PostMessage(msg);
+				//item->SetMarked(true);
+				//PostMessage(msg);
 			}
 		};
 

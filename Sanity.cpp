@@ -6,16 +6,15 @@
 
 #include <Application.h>
 #include <Window.h>
+#include <File.h>
+#include <NodeInfo.h>
 #include <Alert.h>
 #include <TextView.h>
 #include <Catalog.h>
 
 #include "Sanity.h"
-#include "ScannerWindow.h"
-
 
 const char * APPLICATION_SIGNATURE = "application/x-vnd." SOFTWARE_EDITOR "-" SOFTWARE_NAME;
-
 const char * STR_ABOUT_TITLE =	"About " SOFTWARE_NAME;
 const char * STR_ABOUT_BUTTON =	"Hum?";
 const char * STR_ABOUT_TEXT = \
@@ -55,10 +54,10 @@ int main()
 Application::Application()
 	: BApplication(APPLICATION_SIGNATURE)
 {
-	window_rect.Set(50, 50, 780, 580);
-	windows_count = 0;
-	
 	sane_init(0, authenticate);
+
+	BRect window_rect(50, 50, 780, 580);
+	m_window = new ScannerWindow(window_rect);
 }
 
 
@@ -67,64 +66,60 @@ Application::Application()
 Application::~Application()
 {
 	sane_exit();
-
 }
 
 
 // -------------------------------------------------
 void Application::ReadyToRun( void )
 {
-	// Open at least one window!
-	if ( windows_count < 1 )
-		PostMessage(NEW_WINDOW_MSG);
+	m_window->Show();
 }
-	
+
 	
 // --------------------------------------------------------------
-void Application::MessageReceived
-	(
-	BMessage * pMsg
-	)
+void Application::MessageReceived( BMessage * pMsg )
 {
-	switch( pMsg->what ) 
-		{
-		case NEW_WINDOW_MSG:
-			{
-			ScannerWindow * window = new ScannerWindow(window_rect);
-			window->Show();
-
-			window_rect.OffsetBy(40, 40);
-			windows_count++;
-			break;
-			};
-			
-		case WINDOW_CLOSED_MSG:
-			{
-			windows_count--;
-			if ( windows_count < 1 )
-				PostMessage(B_QUIT_REQUESTED);
-			break;
-			};
-			
-		default:
-			inherited::MessageReceived( pMsg );
-			break;
-		};
+	inherited::MessageReceived( pMsg );
 }
 
 
 // --------------------------------------------------------------
-void Application::RefsReceived
-	(
-	BMessage *	msg
-	) 
-{ 
-	switch (msg->what) 
-		{
-		default:
-			inherited::MessageReceived(msg);
-			break;
-		};
+void Application::RefsReceived( BMessage * msg )
+{
+	uint32 type;
+	int32 count;
+	status_t ret = msg->GetInfo("refs", &type, &count);
+	if (ret != B_OK || type != B_REF_TYPE)
+		return;
+
+	entry_ref ref;
+	for (int32 i = 0; i < count; i++) {
+   		if (msg->FindRef("refs", i, &ref) == B_OK) {
+   			BFile file(&ref, B_READ_ONLY);
+   			if (file.InitCheck() == B_OK) {
+				BNodeInfo finfo(&file);
+				if (finfo.InitCheck() != B_OK)
+					return;
+				char fmime[256];
+				if (finfo.GetType(fmime) < B_OK)
+					return;
+				if (strcmp(fmime, SANE_MIMETYPE))
+					return;
+				BString device;
+				file.ReadAttrString("sane-device", &device);
+				if (device.Length() > 0) {
+					status_t ret;
+					wait_for_thread(m_window->DevicesRosterThreadID(), &ret);
+					BMessenger msgr(m_window);
+					BMessage setDevMsg(ScannerWindow::SET_DEVICE_BY_NAME_MSG);
+					setDevMsg.AddString("device", device.String());
+					msgr.SendMessage(&setDevMsg);
+				}
+   			}
+   		}
+   		return;
+   	}
+	inherited::MessageReceived(msg);
 }
 
 
