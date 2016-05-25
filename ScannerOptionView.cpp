@@ -23,7 +23,7 @@ static bool			reload_option(void *ov, void *device);
 // ------------------------
 
 BList ScannerOptionView::m_options_list = BList();
-BLocker ScannerOptionView::m_options_list_locker = BLocker();
+BLocker ScannerOptionView::m_options_list_locker;
 
 
 // --------------------------------------------------------------
