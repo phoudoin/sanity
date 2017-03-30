@@ -1,3 +1,5 @@
+#include "string.h"
+
 #include "SaneUtils.h"
 
 SANE_Int GetSaneInt(SANE_Handle device, const char *name)
