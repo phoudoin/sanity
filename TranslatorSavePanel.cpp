@@ -24,14 +24,14 @@ TranslatorMenuItem::TranslatorMenuItem(const char *name, BMessage *message,
 TranslatorSavePanel::TranslatorSavePanel(const char *name, BMessenger *target, entry_ref *start_directory,
 	uint32 node_flavors, bool allow_multiple_selection, BMessage *message, BRefFilter *filter, bool modal,
 	bool hide_when_done) :
-	
+
 	BFilePanel(B_SAVE_PANEL, target, start_directory, node_flavors, allow_multiple_selection, message, filter,
 		modal, hide_when_done), BHandler(name) {
 
 	configwindow = NULL;
 	if (Window()->Lock()) {
 		Window()->SetTitle(B_TRANSLATE( "Save image" ));
-		
+
 		// Find all the views that are in the way and move up them up 10 pixels
 		BView *background = Window()->ChildAt(0);
 		BView *poseview = background->FindView("PoseView");
@@ -40,23 +40,17 @@ TranslatorSavePanel::TranslatorSavePanel(const char *name, BMessenger *target, e
 		if (cancel) cancel->MoveBy(0, -10);
 		BButton *insert = (BButton *)background->FindView("default button");
 		if (insert) insert->MoveBy(0, -10);
-		BScrollBar *hscrollbar = (BScrollBar *)background->FindView("HScrollBar");
-		if (hscrollbar) hscrollbar->MoveBy(0, -10);
-		BScrollBar *vscrollbar = (BScrollBar *)background->FindView("VScrollBar");
-		if (vscrollbar) vscrollbar->ResizeBy(0, -10);
-		BView *countvw = (BView *)background->FindView("CountVw");
-		if (countvw) countvw->MoveBy(0, -10);
 		BView *textview = (BView *)background->FindView("text view");
 		if (textview) textview->MoveBy(0, 10);
-		
+
 		// Add the new BHandler to the window's looper
 		Window()->AddHandler(this);
-		
-		if (!cancel || !textview || !hscrollbar) {
+
+		if (!cancel || !textview || !poseview) {
 			printf("Couldn't find necessary controls.\n");
 			return;
 		}
-		
+
 		// Build the "Settings" button relative to the cancel button
 		BRect rect = cancel->Frame();
 		rect.right = rect.left - 10;
@@ -66,19 +60,19 @@ TranslatorSavePanel::TranslatorSavePanel(const char *name, BMessenger *target, e
 			B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM, B_WILL_DRAW | B_NAVIGABLE);
 		background->AddChild(settings);
 		settings->SetTarget(this);
-		
+
 		BuildMenu();
-		
+
 		// Position the menu field relative to the other GUI elements, and make it the
 		// same length as the textview
 		rect = textview->Frame();
-		rect.top = hscrollbar->Frame().bottom + 5;
+		rect.top = poseview->Frame().bottom + 5;
 		rect.bottom = rect.top + 10;
 		formatmenufield = new BMenuField(rect, "FormatMenuField", B_TRANSLATE( "Format:"), formatpopupmenu,
 			B_FOLLOW_LEFT | B_FOLLOW_BOTTOM, B_WILL_DRAW | B_NAVIGABLE);
 		background->AddChild(formatmenufield);
 		formatmenufield->SetDivider(be_plain_font->StringWidth(B_TRANSLATE("Format:")) + 7);
-		
+
 		// Set the file panel's message to the first available translator
 		// Use the 'what' field of the supplied message as a model
 		what = message->what;
@@ -89,13 +83,13 @@ TranslatorSavePanel::TranslatorSavePanel(const char *name, BMessenger *target, e
 			m->AddInt32("translator_format", item->format);
 		}
 		SetMessage(m);
-		
+
 		// Make sure the smallest window won't draw the "Settings" button over anything else
 		float min_window_width = Window()->Bounds().right - settings->Frame().left + 10 + textview->Frame().right;
 		Window()->SetSizeLimits(min_window_width, 10000, 250, 10000);
 		if (Window()->Bounds().IntegerWidth() + 1 < min_window_width)
 			Window()->ResizeTo(min_window_width, 300);
-	
+
 		Window()->Unlock();
 	}
 }
@@ -132,7 +126,7 @@ void TranslatorSavePanel::TranslatorSettings() {
 	BTranslatorRoster *roster = BTranslatorRoster::Default();
 	BView *view;
 	BRect rect(0, 0, 239, 239);
-	
+
 	// Build a window around this translator's configuration view
 	status_t err = roster->MakeConfigurationView(item->id, NULL, &view, &rect);
 	if (err != B_OK || view == NULL) {
@@ -163,7 +157,7 @@ void TranslatorSavePanel::BuildMenu() {
 	roster->GetAllTranslators(&translators, &count);
 	const translation_format *format;
 	int32 format_count;
-	
+
 	for (int x = 0; x < count; x++) {
 		// Determine which formats this one can write
 		roster->GetOutputFormats(translators[x], &format, &format_count);
@@ -181,7 +175,7 @@ void TranslatorSavePanel::BuildMenu() {
 		}
 	}
 	delete [] translators;
-	
+
 	// Pick the first translator in the list
 	TranslatorMenuItem *item = (TranslatorMenuItem *)formatpopupmenu->ItemAt(0);
 	if (item != NULL) item->SetMarked(true);
