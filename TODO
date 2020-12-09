@@ -1,37 +1,36 @@
-* Convertir les valeurs selon l'unité :
+* Convert input value according unit:
 	1000 µs -> 1 ms
 	32 bits -> 4 bytes
 	8192 bits -> 1 Kb
 	25,4 mm -> 2,54 cm -> 1 inch 
 	10 mm -> 1 cm
-	-> FAIT, sauf le support metrique -> inch & co
+	-> DONE, except for metric system -> inch & co
 
-* Supprimer les ".00" des valeurs décimales lorques le Quant (si y'en a un) et entier lui aussi...
+* Remove trailing ".00" from decimal values when Quant (if any) is integer also...
 
-* CurveControl, supportant int min, int max, nb values, un label, plusieurs modes de courbe (gamma, segments, splines/bezies + reset)
+* CurveControl, supporting int min, int max, nb values, a label, few curves modes (gamma, segments, splines/bezies + reset)
 
 * SpinControl 
-	Support de format de saisie décimaux en plus d'entiers.
-         Corriger le bug de placement du label
+	Add support to input decimal value, not only integer
+        Fix label placement bug
 
-* Grouper toutes les options dans une seule et même boite si elles étaients toutes seules dans 
-  chaque groupe... -> niash driver, par exemple
+* Group all single options in a single option group into the same generic CollapsableBox -> niash driver, for example
 
-* Ajouter des icones au fichier resource
-	-> FAIT, facile à en ajouter...
+* Add icons to resource file
+	-> DONE, easy to add more...
 
-* Ajouter une CollapsableBox avec des infos sur le driver en fin de liste...
-	-> FAIT
+* Add a CollapsableBox with driver infos
+	-> DONE
 
-* Implementer le Preview + scan area(s) selection
-	Zoom dans l'image preview, si possible.
+* Add Preview + scan area(s) selection
+	-> DONE
 
-* Corriger le bug sur les SANE_Fixed négatif et le slider (qui les interprete comme des integers unsigned!!!)
+* Fix negative SANE_Fixed bug with slider (which interpret it as unsigned integer!!!)
 
-* Revoir le visuel globalement :
-  - menu de preset MenuField tout ch'tit
-  - sauvegarde des valeurs de options (y compris l'état des CollapsableBoxes)
-  - Bouton prescan, barre de progression a intégrer *ailleurs*
+* Rework visual interface more globally:
+  - tiny preset MenuField
+  - Load/save settings (options values, window position, CollapsableBoxes state, etc)
+  - Prescan button, progress bar to better integrate *somewhere* else
 
 
 
